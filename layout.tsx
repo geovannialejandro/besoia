@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: 'BESOIA — Generación de imágenes y videos ultra realistas',
   description:
     'BESOIA genera imágenes y videos ultra realistas con inteligencia artificial. Privacidad total y control absoluto de tu contenido.',
-  generator: 'v0.app',
+  generator: 'BESOIA',
 }
 
 export const viewport: Viewport = {
