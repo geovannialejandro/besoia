@@ -1,3 +1,30 @@
+'use client'
+
+import { useState, useRef } from 'react'
+import { Loader2, Download, Sparkles, Upload, X } from 'lucide-react'
+import { Button } from './button'
+import { MODELS, getModel, type MediaType, type ModelConfig } from './models'
+
+type Result = { url: string; type: MediaType }
+
+export function BesoiaGenerator() {
+  const [modelId, setModelId] = useState<string>(MODELS[0].id)
+  const [prompt, setPrompt] = useState('')
+  const [faceImage, setFaceImage] = useState<{ name: string; dataUrl: string } | null>(null)
+  const [drivingVideo, setDrivingVideo] = useState<{ name: string; dataUrl: string } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [result, setResult] = useState<Result | null>(null)
+
+  const faceInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+
+  const model = getModel(modelId)
+
+  const canSubmit =
+    !loading &&
+    (!model.needsPrompt || prompt.trim().length > 0) &&
+    (!model.needsFaceImage || !!faceImage) &&
     (!model.needsDrivingVideo || !!drivingVideo)
 
   async function handleFile(
@@ -13,6 +40,15 @@
     } catch {
       setError('No se pudo cargar el archivo. Intenta con otro.')
     }
+  }
+
+  function readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
   }
 
   async function handleGenerate() {
@@ -251,4 +287,5 @@ function FileField({
       )}
     </div>
   )
-      } 
+} 
+    
