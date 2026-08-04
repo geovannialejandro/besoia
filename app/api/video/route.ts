@@ -13,6 +13,7 @@ export async function POST(req: Request) {
       headers: {
         'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
         version: 'uncensored-com/wan2.1-uncensored-video-lora:46cfc445b5f89469deb11b5d8227ff9e3bb129c8920f3886cd78c426f43204c4',
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
       const pollRes = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
         headers: {
           'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+          'Accept': 'application/json'
         },
       })
       result = await pollRes.json()
@@ -63,3 +65,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'Error generando video' }, { status: 500 })
   }
 }
+
