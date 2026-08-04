@@ -1,5 +1,5 @@
 import { ShieldCheck, Zap, Sparkles } from 'lucide-react'
-import { BesoiaGenerator } from '@/components/besoia-generator'
+import { BesoiaGenerator } from './besoia-generator'
 
 export default function Page() {
   return (
