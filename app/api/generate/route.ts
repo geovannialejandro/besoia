@@ -23,8 +23,8 @@ export async function POST(req: Request) {
           disable_safety_checker: true,
           width: 832,
           height: 1216,
-          num_inference_steps: 28,
-          guidance_scale: 5.5,
+          num_inference_steps: 35,
+          guidance_scale: 7.5,
         },
       }),
     })
