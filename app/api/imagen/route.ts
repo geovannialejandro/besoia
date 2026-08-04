@@ -63,3 +63,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'Error generando imagen' }, { status: 500 })
   }
 }
+headers: {
+  'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+  'Content-Type': 'application/json',
+  'Accept': 'application/json' // ✅ Aquí también va
+}
