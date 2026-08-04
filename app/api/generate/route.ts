@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       headers: {
         'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json' // ✅ Ya agregado
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
         version: 'lucataco/juggernaut-xl-v9:bea09cf018e513cef0841719559ea86d2299e05448633ac8fe270b5d5cd6777e',
@@ -35,7 +35,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
-    for (let i = 0; i < 60; i++) {
+    // Esperamos hasta que esté 100% lista
+    for (let i = 0; i < 90; i++) {
       if (result.status === 'succeeded') break
       if (result.status === 'failed' || result.status === 'canceled') {
         return NextResponse.json({ error: result.error || 'La generación falló' }, { status: 500 })
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       const pollRes = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
         headers: {
           'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
-          'Accept': 'application/json' // ✅ También aquí
+          'Accept': 'application/json'
         },
       })
       result = await pollRes.json()
@@ -56,7 +57,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Tiempo de espera agotado' }, { status: 504 })
     }
 
+    // ✅ Arreglamos lo del arreglo: funciona venga lista o texto directo
     const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output
+
+    if (!imageUrl) {
+      return NextResponse.json({ error: 'No se obtuvo la imagen' }, { status: 500 })
+    }
 
     return NextResponse.json({ image: imageUrl })
 
@@ -65,3 +71,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'Error generando imagen' }, { status: 500 })
   }
 }
+
