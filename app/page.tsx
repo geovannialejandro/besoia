@@ -4,7 +4,7 @@ import { BesoiaGenerator } from './besoia-generator'
 export default function Page() {
   return (
     <main className="relative flex min-h-svh flex-col items-center overflow-hidden px-5 py-14 sm:py-20">
-      {/* Subtle radial glow behind the title */}
+      {/* Brillo suave detrás del título */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-primary/10 blur-[120px]"
@@ -16,8 +16,10 @@ export default function Page() {
           Inteligencia artificial de última generación
         </span>
 
-        <h1 className="text-balance font-serif text-6xl font-bold leading-none tracking-tight text-primary sm:text-7xl md:text-8xl">
-          <span aria-hidden="true">💋</span> BESOIA
+        {/* ✅ Aquí el besito al lado izquierdo */}
+        <h1 className="text-balance font-serif text-6xl font-bold leading-none tracking-tight text-primary sm:text-7xl md:text-8xl flex items-center gap-3">
+          <span aria-hidden="true" className="text-7xl">💋</span>
+          BESOIA
         </h1>
 
         <p className="mt-6 max-w-md text-balance text-lg leading-relaxed text-muted-foreground sm:text-xl">
@@ -25,7 +27,7 @@ export default function Page() {
         </p>
       </header>
 
-      {/* Generator */}
+      {/* Generador */}
       <section className="mt-10 flex w-full flex-col items-center" aria-label="Generador">
         <BesoiaGenerator />
 
@@ -36,7 +38,7 @@ export default function Page() {
         </p>
       </section>
 
-      {/* Feature highlights */}
+      {/* Características */}
       <section className="mt-14 grid w-full max-w-xl grid-cols-1 gap-4 sm:grid-cols-3">
         {[
           {
@@ -72,3 +74,4 @@ export default function Page() {
     </main>
   )
 }
+
