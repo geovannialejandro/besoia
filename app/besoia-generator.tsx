@@ -2,17 +2,12 @@
 
 import { useState } from 'react'
 
-type ResultType = {
-  type: 'image' | 'video'
-  url: string
-} | null
-
 export function BesoiaGenerator() {
-  const [prompt, setPrompt] = useState<string>('')
-  const [loading, setLoading] = useState<boolean>(false)
-  const [result, setResult] = useState<ResultType>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [prompt, setPrompt] = useState('')
   const [mode, setMode] = useState<'image' | 'video'>('image')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<{ type: 'image' | 'video'; url: string } | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleGenerate() {
     if (!prompt) return
@@ -33,19 +28,13 @@ export function BesoiaGenerator() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || 'Error generando contenido')
+        throw new Error(data.error || 'Error generando')
       }
 
       if (mode === 'video') {
-        setResult({
-          type: 'video',
-          url: data.video,
-        })
+        setResult({ type: 'video', url: data.video })
       } else {
-        setResult({
-          type: 'image',
-          url: data.image,
-        })
+        setResult({ type: 'image', url: data.image })
       }
     } catch (err: any) {
       setError(err.message || 'Error inesperado')
@@ -56,64 +45,53 @@ export function BesoiaGenerator() {
 
   return (
     <div className="w-full max-w-xl space-y-4">
-      {/* Selector */}
+      {/* Botones Imagen / Video */}
       <div className="flex gap-2">
         <button
           onClick={() => setMode('image')}
-          className={`px-4 py-2 rounded-xl ${
-            mode === 'image' ? 'bg-primary text-white' : 'bg-muted'
+          className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium ${
+            mode === 'image' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
           }`}
         >
           Imagen
         </button>
-
         <button
           onClick={() => setMode('video')}
-          className={`px-4 py-2 rounded-xl ${
-            mode === 'video' ? 'bg-primary text-white' : 'bg-muted'
+          className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium ${
+            mode === 'video' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
           }`}
         >
           Video
         </button>
       </div>
 
-      {/* Input */}
+      {/* Prompt */}
       <textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         placeholder="Describe lo que quieres crear..."
-        className="w-full rounded-xl border p-3"
+        className="w-full rounded-xl border border-border bg-background p-4 min-h-[110px] text-sm"
       />
 
-      {/* Botón */}
+      {/* Botón Generar */}
       <button
         onClick={handleGenerate}
         disabled={loading}
-        className="w-full rounded-xl bg-primary py-3 text-white"
+        className="w-full rounded-xl bg-primary py-3.5 text-white font-medium disabled:opacity-50"
       >
-        {loading ? 'Generando...' : 'Generar'}
+        {loading ? 'Generando...' : 'Generar Ahora'}
       </button>
 
       {/* Error */}
-      {error && (
-        <p className="text-red-500 text-sm">{error}</p>
-      )}
+      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
       {/* Resultado */}
       {result?.type === 'image' && (
-        <img
-          src={result.url}
-          alt="resultado"
-          className="rounded-xl"
-        />
+        <img src={result.url} alt="Resultado" className="w-full rounded-xl shadow-lg" />
       )}
 
       {result?.type === 'video' && (
-        <video
-          src={result.url}
-          controls
-          className="rounded-xl"
-        />
+        <video src={result.url} controls className="w-full rounded-xl shadow-lg" />
       )}
     </div>
   )
