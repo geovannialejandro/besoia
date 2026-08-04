@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState } from 'react'
@@ -17,7 +18,8 @@ export function BesoiaGenerator() {
     setResult(null)
 
     try {
-      const endpoint = mode === 'video' ? '/api/video' : '/api/imagen'
+      // ✅ Direcciones corregidas a tus carpetas
+      const endpoint = mode === 'video' ? '/api/generate-video' : '/api/generate'
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -50,7 +52,7 @@ export function BesoiaGenerator() {
         <button
           onClick={() => setMode('image')}
           className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium ${
-            mode === 'image' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
+            mode === 'image' ? 'bg-amber-700 text-white' : 'bg-gray-800 text-gray-300'
           }`}
         >
           Imagen
@@ -58,7 +60,7 @@ export function BesoiaGenerator() {
         <button
           onClick={() => setMode('video')}
           className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium ${
-            mode === 'video' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
+            mode === 'video' ? 'bg-amber-700 text-white' : 'bg-gray-800 text-gray-300'
           }`}
         >
           Video
@@ -70,28 +72,38 @@ export function BesoiaGenerator() {
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         placeholder="Describe lo que quieres crear..."
-        className="w-full rounded-xl border border-border bg-background p-4 min-h-[110px] text-sm"
+        className="w-full rounded-xl border border-amber-800 bg-black p-4 min-h-[110px] text-sm text-white"
       />
 
       {/* Botón Generar */}
       <button
         onClick={handleGenerate}
         disabled={loading}
-        className="w-full rounded-xl bg-primary py-3.5 text-white font-medium disabled:opacity-50"
+        className="w-full rounded-xl bg-amber-700 py-3.5 text-white font-medium disabled:opacity-50 hover:bg-amber-600 transition"
       >
         {loading ? 'Generando...' : 'Generar Ahora'}
       </button>
 
       {/* Error */}
-      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+      {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
-      {/* Resultado */}
+      {/* Resultado - Ya se verá completo, sin iconos raros */}
       {result?.type === 'image' && (
-        <img src={result.url} alt="Resultado" className="w-full rounded-xl shadow-lg" />
+        <img 
+          src={result.url} 
+          alt="Resultado generado" 
+          className="w-full rounded-xl shadow-lg border border-amber-900" 
+        />
       )}
 
       {result?.type === 'video' && (
-        <video src={result.url} controls className="w-full rounded-xl shadow-lg" />
+        <video 
+          src={result.url} 
+          controls 
+          autoPlay
+          loop
+          className="w-full rounded-xl shadow-lg border border-amber-900" 
+        />
       )}
     </div>
   )
