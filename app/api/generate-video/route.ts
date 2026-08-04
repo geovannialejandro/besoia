@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 120; i++) {
       if (result.status === 'succeeded') break
       if (result.status === 'failed' || result.status === 'canceled') {
         return NextResponse.json({ error: result.error || 'El video falló' }, { status: 500 })
@@ -56,7 +56,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Tiempo de espera agotado' }, { status: 504 })
     }
 
+    // ✅ Mismo arreglo para videos
     const videoUrl = Array.isArray(result.output) ? result.output[0] : result.output
+
+    if (!videoUrl) {
+      return NextResponse.json({ error: 'No se obtuvo el video' }, { status: 500 })
+    }
 
     return NextResponse.json({ video: videoUrl })
 
@@ -64,4 +69,5 @@ export async function POST(req: Request) {
     console.error(error)
     return NextResponse.json({ error: error.message || 'Error generando video' }, { status: 500 })
   }
-      }
+}
+
