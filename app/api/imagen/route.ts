@@ -13,6 +13,7 @@ export async function POST(req: Request) {
       headers: {
         'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json' // ✅ Ya agregado
       },
       body: JSON.stringify({
         version: 'lucataco/juggernaut-xl-v9:bea09cf018e513cef0841719559ea86d2299e05448633ac8fe270b5d5cd6777e',
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
       const pollRes = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
         headers: {
           'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+          'Accept': 'application/json' // ✅ También aquí
         },
       })
       result = await pollRes.json()
@@ -63,8 +65,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'Error generando imagen' }, { status: 500 })
   }
 }
-headers: {
-  'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
-  'Content-Type': 'application/json',
-  'Accept': 'application/json' // ✅ Aquí también va
-}
+
