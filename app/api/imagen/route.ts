@@ -15,7 +15,7 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: 'bea09cf018e513cef0841719559ea86d2299e05448633ac8fe270b5d5cd6777e',
+        version: 'lucataco/juggernaut-xl-v9:bea09cf018e513cef0841719559ea86d2299e05448633ac8fe270b5d5cd6777e',
         input: {
           prompt,
           negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy',
@@ -63,4 +63,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'Error generando imagen' }, { status: 500 })
   }
 }
-
