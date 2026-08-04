@@ -19,7 +19,7 @@ export async function POST(req: Request) {
         version: 'lucataco/juggernaut-xl-v9:bea09cf018e513cef0841719559ea86d2299e05448633ac8fe270b5d5cd6777e',
         input: {
           prompt,
-          negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy',
+          negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy, anime, cartoon, illustration, painting, drawing'
           disable_safety_checker: true,
           width: 832,
           height: 1216,
