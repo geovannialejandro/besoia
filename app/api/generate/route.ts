@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
@@ -17,22 +16,19 @@ export async function POST(req: Request) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        // 🔥 CAMBIO DE MODELO (hash fijo para evitar errores)
-        version: 'asiryan/realvisxl-v4:3f9f3f8c1a9b4e5d7c6a2c5f0b1e8a6b5c2d9f4a1b6c3d8e9f0a1b2c3d4e5f6',
-
+        version: 'lucataco/juggernaut-xl-v9:bea09cf018e513cef0841719559ea86d2299e05448633ac8fe270b5d5cd6777e',
         input: {
-          // 🔥 prompt mejorado automáticamente
-          prompt: `RAW photo, ${prompt}, natural skin texture, realistic imperfections, photorealistic, soft lighting`,
+          prompt: `RAW photo, ${prompt}, photorealistic, natural skin texture, soft lighting, realistic imperfections`,
+          negative_prompt: 'anime, cartoon, illustration, painting, drawing, cgi, 3d render, fake skin, plastic, blurry, bad anatomy',
 
-          // 🔥 negativa limpia (sin matar detalles)
-          negative_prompt: 'anime, cartoon, illustration, painting, drawing, cgi',
+          width: 768,
+          height: 1024,
 
-          // 🔥 mejor formato (más usable para retratos)
-          width: 832,
-          height: 1216,
-
-          num_inference_steps: 20,
+          num_inference_steps: 30,
           guidance_scale: 6,
+
+          // 👇 algunos wrappers sí aceptan esto
+          scheduler: "K_EULER"
         },
       }),
     })
@@ -43,11 +39,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
-    // Esperamos hasta que esté lista
+    // ⏳ polling
     for (let i = 0; i < 180; i++) {
       if (result.status === 'succeeded') break
+
       if (result.status === 'failed' || result.status === 'canceled') {
-        return NextResponse.json({ error: result.error || 'La generación falló' }, { status: 500 })
+        return NextResponse.json(
+          { error: result.error || 'La generación falló' },
+          { status: 500 }
+        )
       }
 
       await new Promise((r) => setTimeout(r, 1000))
@@ -58,6 +58,7 @@ export async function POST(req: Request) {
           'Accept': 'application/json'
         },
       })
+
       result = await pollRes.json()
     }
 
@@ -75,6 +76,9 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error(error)
-    return NextResponse.json({ error: error.message || 'Error generando imagen' }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || 'Error generando imagen' },
+      { status: 500 }
+    )
   }
 }
