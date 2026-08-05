@@ -31,7 +31,7 @@ export async function POST(req: Request) {
           width: 832,
           height: 1216,
 
-          num_inference_steps: 25,
+          num_inference_steps: 20,
           guidance_scale: 6,
         },
       }),
