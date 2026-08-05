@@ -16,15 +16,17 @@ export async function POST(req: Request) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        version: 'lucataco/juggernaut-xl-v9:bea09cf018e513cef0841719559ea86d2299e05448633ac8fe270b5d5cd6777e',
+        version: 'adirik/realvisxl-v4.0:85a58cc71587cc27539b7c83eb1ce4aea02feedfb9a9fae0598cebc110a3d695',
         input: {
           prompt,
-          negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy, extra limbs, watermark, text, cartoon, anime, drawing',
+          negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy, extra limbs, watermark, text, cartoon, anime, drawing, illustration, 3d, render, plastic skin, oversaturated',
           width: 832,
           height: 1216,
-          num_inference_steps: 35,
-          guidance_scale: 7,
-          disable_safety_checker: true
+          num_inference_steps: 30,
+          guidance_scale: 5.5,
+          scheduler: 'DPM++_SDE_Karras',
+          disable_safety_checker: true,
+          apply_watermark: false
         },
       }),
     })
@@ -35,6 +37,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error, status: 400 })
     }
 
+    // Polling (máximo 90 segundos)
     for (let i = 0; i < 90; i++) {
       if (result.status === 'succeeded') break
       if (result.status === 'failed' || result.status === 'canceled') {
@@ -69,4 +72,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || 'Error generando imagen', status: 500 })
   }
 }
-  
