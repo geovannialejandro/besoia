@@ -24,7 +24,7 @@ export async function POST(req: Request) {
           width: 832,
           height: 1216,
           num_inference_steps: 35,
-          guidance_scale: 7,
+          guidance_scale: 4,
         },
       }),
     })
