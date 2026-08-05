@@ -31,7 +31,7 @@ export async function POST(req: Request) {
           width: 832,
           height: 1216,
 
-          num_inference_steps: 30,
+          num_inference_steps: 25,
           guidance_scale: 6,
         },
       }),
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     }
 
     // Esperamos hasta que esté lista
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 180; i++) {
       if (result.status === 'succeeded') break
       if (result.status === 'failed' || result.status === 'canceled') {
         return NextResponse.json({ error: result.error || 'La generación falló' }, { status: 500 })
