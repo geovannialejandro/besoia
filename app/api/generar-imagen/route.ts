@@ -1,39 +1,3 @@
-import { NextResponse } from 'next/server'
-
-export const runtime = 'nodejs'
-export const maxDuration = 60
-
-export async function POST(req: Request) {
-  try {
-    // Verificamos que exista el token
-    if (!process.env.REPLICATE_API_TOKEN) {
-      throw new Error('Falta configurar el token de Replicate')
-    }
-
-    const formData = await req.formData()
-    const prompt = formData.get('prompt') as string
-    const foto = formData.get('foto') as File | null
-
-    if (!prompt) {
-      return NextResponse.json({ error: 'Escribe tu descripción' }, { status: 400 })
-    }
-
-    const input: any = {
-      prompt: prompt,
-      negative_prompt: 'blurry, feo, deformado, manos mal, anatomía mala, dibujo, anime, marca de agua, texto, baja calidad',
-      num_inference_steps: 30,
-      guidance_scale: 7.5
-    }
-
-    // ✅ Forma correcta para Node.js/Vercel
-    if (foto) {
-      const arrayBuffer = await foto.arrayBuffer()
-      const uint8 = new Uint8Array(arrayBuffer)
-      const base64 = Buffer.from(uint8).toString('base64')
-      input.ip_adapter_image = `data:${foto.type};base64,${base64}`
-    }
-
-    // Log para ver qué enviamos
     console.log('Enviando a Replicate:', input)
 
     const crear = await fetch('https://api.replicate.com/v1/predictions', {
