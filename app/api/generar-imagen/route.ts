@@ -13,6 +13,7 @@ export async function POST(req: Request) {
         version: 'lucataco/realvis-xl-v4:cf1669214b850d270608093c2a068b07292125c1',
         input: {
           prompt: prompt,
+          negative_prompt: 'blurry, ugly, deformed, bad hands, bad anatomy, drawing, anime, cartoon, illustration, watermark, text, low quality, distorted',
           ip_adapter_image: fotoReferencia || '',
           num_inference_steps: 30,
           guidance_scale: 7.5
@@ -25,4 +26,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'No se pudo generar', status: 500 })
   }
 }
-
