@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Loader2, Download, Sparkles, Upload } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
 export function BesoiaGenerator() {
   const [modo, setModo] = useState<'imagen' | 'ropa' | 'animar' | 'video'>('imagen')
@@ -14,7 +13,7 @@ export function BesoiaGenerator() {
   const [resultado, setResultado] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // ✅ RUTAS YA CORREGIDAS EXACTAS A TUS CARPETAS
+  // Rutas exactas a tus carpetas
   const rutas = {
     imagen: '/api/generar-imagen',
     ropa: '/api/cambiar-ropa',
@@ -167,16 +166,17 @@ export function BesoiaGenerator() {
         )}
       </div>
 
-      <Button
+      {/* Botón corregido sin usar el archivo que no existe */}
+      <button
         onClick={generar}
         disabled={cargando}
-        className="w-full mt-6 py-4 text-lg font-bold bg-amber-500 hover:bg-amber-600 text-black"
+        className="w-full mt-6 py-4 text-lg font-bold bg-amber-500 hover:bg-amber-600 text-black rounded-lg transition-all disabled:opacity-50"
       >
-        {cargando ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2" />}
+        {cargando ? <Loader2 className="animate-spin mr-2 inline" /> : <Sparkles className="mr-2 inline" />}
         {cargando ? 'Generando...' : '✨ Crear Ahora'}
-      </Button>
+      </button>
 
-      {error && <p className="text-red-400 mt-4 text-center">{error}</p>}
+      {error && <p className="text-red-400 mt-4 text-center">{error}</p>
       
       {resultado && (
         <div className="mt-6">
@@ -198,4 +198,4 @@ export function BesoiaGenerator() {
       )}
     </div>
   )
-}
+                }
