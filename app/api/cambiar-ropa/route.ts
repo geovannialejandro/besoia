@@ -14,7 +14,9 @@ export async function POST(req: Request) {
         input: {
           human_img: foto,
           garment: ropa,
-          garment_des: ropa
+          garment_des: ropa,
+          num_inference_steps: 30,
+          guidance_scale: 7
         }
       })
     })
@@ -24,4 +26,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'No se pudo cambiar la ropa', status: 500 })
   }
 }
-
