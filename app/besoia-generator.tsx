@@ -189,7 +189,7 @@ export function BesoiaGenerator() {
         {cargando ? 'Generando...' : '✨ Crear Ahora'}
       </button>
 
-      {error && <p className="text-red-400 mt-4 text-center">{error}</p>
+      {error && <p className="text-red-400 mt-4 text-center">{error}</p>}
       
       {resultado && (
         <div className="mt-6">
@@ -211,5 +211,5 @@ export function BesoiaGenerator() {
       )}
     </div>
   )
-}
-
+          }
+        
