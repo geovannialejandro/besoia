@@ -13,7 +13,6 @@ export function BesoiaGenerator() {
   const [resultado, setResultado] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Rutas exactas a tus carpetas
   const rutas = {
     imagen: '/api/generar-imagen',
     ropa: '/api/cambiar-ropa',
@@ -166,7 +165,6 @@ export function BesoiaGenerator() {
         )}
       </div>
 
-      {/* Botón corregido sin usar el archivo que no existe */}
       <button
         onClick={generar}
         disabled={cargando}
@@ -176,7 +174,7 @@ export function BesoiaGenerator() {
         {cargando ? 'Generando...' : '✨ Crear Ahora'}
       </button>
 
-      {error && <p className="text-red-400 mt-4 text-center">{error}</p>
+      {error && <p className="text-red-400 mt-4 text-center">{error}</p>}
       
       {resultado && (
         <div className="mt-6">
@@ -198,4 +196,5 @@ export function BesoiaGenerator() {
       )}
     </div>
   )
-                }
+}
+
