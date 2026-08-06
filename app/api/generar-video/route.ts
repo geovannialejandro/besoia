@@ -13,9 +13,11 @@ export async function POST(req: Request) {
         version: 'uncensored-com/wan2.1-uncensored-video-lora:46cfc445b5f89469deb11b5d8227ff9e3bb129c8920f3886cd78c426f432',
         input: {
           prompt: prompt,
+          negative_prompt: 'blurry, ugly, deformed, bad hands, bad anatomy, low quality, distorted, watermark',
           first_frame_image: imagen || '',
           num_frames: 81,
-          fps: 16
+          fps: 16,
+          guidance_scale: 7.5
         }
       })
     })
@@ -25,4 +27,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'No se pudo generar el video', status: 500 })
   }
 }
-
