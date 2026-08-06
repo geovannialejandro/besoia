@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
 export const maxDuration = 60
 
 export async function POST(req: Request) {
@@ -20,9 +21,12 @@ export async function POST(req: Request) {
     }
 
     if (foto) {
-      const buffer = Buffer.from(await foto.arrayBuffer())
-      const base64 = `data:${foto.type};base64,${buffer.toString('base64')}`
-      input.ip_adapter_image = base64
+      const arrayBuffer = await foto.arrayBuffer()
+      const uint8 = new Uint8Array(arrayBuffer)
+      let binario = ''
+      uint8.forEach(b => binario += String.fromCharCode(b))
+      const base64 = btoa(binario)
+      input.ip_adapter_image = `data:${foto.type};base64,${base64}`
     }
 
     const crear = await fetch('https://api.replicate.com/v1/predictions', {
@@ -60,4 +64,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Algo salió mal al procesar' }, { status: 500 })
   }
 }
-
