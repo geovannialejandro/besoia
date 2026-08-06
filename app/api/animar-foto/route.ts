@@ -13,7 +13,8 @@ export async function POST(req: Request) {
         version: 'kwairsc/liveportrait:85d97f3a2b1c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e',
         input: {
           source_image: foto,
-          driving_pose: 'neutral'
+          driving_pose: 'neutral',
+          scale: 1
         }
       })
     })
@@ -23,4 +24,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'No se pudo animar', status: 500 })
   }
 }
-
