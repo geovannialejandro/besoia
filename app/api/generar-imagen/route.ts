@@ -5,6 +5,11 @@ export const maxDuration = 60
 
 export async function POST(req: Request) {
   try {
+    // Verificamos que exista el token
+    if (!process.env.REPLICATE_API_TOKEN) {
+      throw new Error('Falta configurar el token de Replicate')
+    }
+
     const formData = await req.formData()
     const prompt = formData.get('prompt') as string
     const foto = formData.get('foto') as File | null
@@ -20,14 +25,16 @@ export async function POST(req: Request) {
       guidance_scale: 7.5
     }
 
+    // ✅ Forma correcta para Node.js/Vercel
     if (foto) {
       const arrayBuffer = await foto.arrayBuffer()
       const uint8 = new Uint8Array(arrayBuffer)
-      let binario = ''
-      uint8.forEach(b => binario += String.fromCharCode(b))
-      const base64 = btoa(binario)
+      const base64 = Buffer.from(uint8).toString('base64')
       input.ip_adapter_image = `data:${foto.type};base64,${base64}`
     }
+
+    // Log para ver qué enviamos
+    console.log('Enviando a Replicate:', input)
 
     const crear = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
@@ -42,6 +49,8 @@ export async function POST(req: Request) {
     })
 
     const prediccion = await crear.json()
+    console.log('Respuesta inicial:', prediccion)
+
     if (!crear.ok) throw new Error(prediccion.error || 'Error al generar')
 
     let estado = prediccion
@@ -51,17 +60,18 @@ export async function POST(req: Request) {
         headers: { 'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}` }
       })
       estado = await revisar.json()
+      console.log('Estado actual:', estado.status)
     }
 
     if (estado.status === 'failed') {
-      return NextResponse.json({ error: 'No se pudo generar la imagen' }, { status: 500 })
+      return NextResponse.json({ error: estado.error || 'No se pudo generar la imagen' }, { status: 500 })
     }
 
     return NextResponse.json({ imagen: estado.output?.[0] || estado.output })
 
   } catch (err) {
-    console.error(err)
-    return NextResponse.json({ error: 'Algo salió mal al procesar' }, { status: 500 })
+    console.error('Error completo:', err)
+    return NextResponse.json({ error: (err as Error).message || 'Algo salió mal al procesar' }, { status: 500 })
   }
 }
 
