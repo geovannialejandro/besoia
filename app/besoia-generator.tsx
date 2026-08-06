@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, Download, Sparkles, Upload } from 'lucide-react'
+import { Loader2, Download, Sparkles } from 'lucide-react'
 
 export function BesoiaGenerator() {
   const [modo, setModo] = useState<'imagen' | 'ropa' | 'animar' | 'video'>('imagen')
@@ -27,11 +27,10 @@ export function BesoiaGenerator() {
 
     try {
       let cuerpo: any = {}
-      let cabeceras: any = {}
 
       if (modo === 'imagen' || modo === 'video') {
         cuerpo = { prompt }
-        cabeceras = { 'Content-Type': 'application/json' }
+        if (archivo) cuerpo.ip_adapter_image = archivo
       } else {
         if (!archivo) throw new Error('Sube tu foto primero')
         const form = new FormData()
@@ -45,8 +44,12 @@ export function BesoiaGenerator() {
 
       const respuesta = await fetch(rutas[modo], {
         method: 'POST',
-        headers: modo === 'imagen' || modo === 'video' ? cabeceras : {},
-        body: modo === 'imagen' || modo === 'video' ? JSON.stringify(cuerpo) : cuerpo
+        body: modo === 'imagen' || modo === 'video' 
+          ? JSON.stringify(cuerpo) 
+          : cuerpo,
+        headers: modo === 'imagen' || modo === 'video' 
+          ? { 'Content-Type': 'application/json' } 
+          : {}
       })
 
       const datos = await respuesta.json()
@@ -105,9 +108,21 @@ export function BesoiaGenerator() {
       </div>
 
       <div className="space-y-4">
+        {modo === 'imagen' && (
+          <div>
+            <label className="text-white font-medium mb-2 block">📸 Tu foto para copiar tu cara:</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+              className="w-full p-3 rounded-lg bg-gray-900 border border-amber-700 text-white"
+            />
+          </div>
+        )}
+
         {(modo === 'imagen' || modo === 'video') && (
           <div>
-            <label className="text-white font-medium mb-2 block">Escribe tu descripción:</label>
+            <label className="text-white font-medium mb-2 block">✍️ Escribe tu descripción:</label>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -120,7 +135,7 @@ export function BesoiaGenerator() {
 
         {(modo === 'ropa' || modo === 'animar') && (
           <div>
-            <label className="text-white font-medium mb-2 block">Sube tu foto:</label>
+            <label className="text-white font-medium mb-2 block">📸 Sube tu foto:</label>
             <input
               type="file"
               accept="image/*"
@@ -174,7 +189,7 @@ export function BesoiaGenerator() {
         {cargando ? 'Generando...' : '✨ Crear Ahora'}
       </button>
 
-      {error && <p className="text-red-400 mt-4 text-center">{error}</p>}
+      {error && <p className="text-red-400 mt-4 text-center">{error}</p>
       
       {resultado && (
         <div className="mt-6">
