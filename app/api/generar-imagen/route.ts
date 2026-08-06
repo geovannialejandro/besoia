@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
   try {
-    const { prompt, fotoReferencia } = await req.json()
+    const { prompt, ip_adapter_image } = await req.json()
     const res = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -13,8 +13,8 @@ export async function POST(req: Request) {
         version: 'lucataco/realvis-xl-v4:cf1669214b850d270608093c2a068b07292125c1',
         input: {
           prompt: prompt,
-          negative_prompt: 'blurry, ugly, deformed, bad hands, bad anatomy, drawing, anime, cartoon, illustration, watermark, text, low quality, distorted',
-          ip_adapter_image: fotoReferencia || '',
+          negative_prompt: 'blurry, ugly, deformed, bad hands, bad anatomy, drawing, anime, watermark, text, low quality',
+          ip_adapter_image: ip_adapter_image || '',
           num_inference_steps: 30,
           guidance_scale: 7.5
         }
@@ -23,6 +23,6 @@ export async function POST(req: Request) {
     const data = await res.json()
     return NextResponse.json({ imagen: data.output?.[0] || data.output })
   } catch (e) {
-    return NextResponse.json({ error: 'No se pudo generar', status: 500 })
+    return NextResponse.json({ error: 'No se pudo generar la imagen', status: 500 })
   }
 }
