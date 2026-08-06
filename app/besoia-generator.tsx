@@ -5,7 +5,6 @@ import { Loader2, Download, Sparkles, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function BesoiaGenerator() {
-  // Estados que necesitamos
   const [modo, setModo] = useState<'imagen' | 'ropa' | 'animar' | 'video'>('imagen')
   const [prompt, setPrompt] = useState('')
   const [opcionRopa, setOpcionRopa] = useState('')
@@ -15,15 +14,14 @@ export function BesoiaGenerator() {
   const [resultado, setResultado] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Rutas de cada función
+  // ✅ RUTAS YA CORREGIDAS EXACTAS A TUS CARPETAS
   const rutas = {
-    imagen: '/api/generate',
+    imagen: '/api/generar-imagen',
     ropa: '/api/cambiar-ropa',
     animar: '/api/animar-foto',
-    video: '/api/generate-video'
+    video: '/api/generar-video'
   }
 
-  // Función para generar
   async function generar() {
     setCargando(true)
     setError(null)
@@ -67,7 +65,6 @@ export function BesoiaGenerator() {
   return (
     <div className="w-full max-w-2xl mx-auto p-5 bg-black/70 rounded-2xl border border-amber-600">
       
-      {/* Menú de modelos bien visible */}
       <div className="mb-6">
         <h3 className="text-amber-400 font-bold mb-3 text-center text-lg">✨ Elige lo que quieres hacer</h3>
         <div className="grid grid-cols-2 gap-3">
@@ -109,7 +106,6 @@ export function BesoiaGenerator() {
         </div>
       </div>
 
-      {/* Lo que pide cada opción */}
       <div className="space-y-4">
         {(modo === 'imagen' || modo === 'video') && (
           <div>
@@ -171,7 +167,6 @@ export function BesoiaGenerator() {
         )}
       </div>
 
-      {/* Botón de generar */}
       <Button
         onClick={generar}
         disabled={cargando}
@@ -181,7 +176,6 @@ export function BesoiaGenerator() {
         {cargando ? 'Generando...' : '✨ Crear Ahora'}
       </Button>
 
-      {/* Errores y resultado */}
       {error && <p className="text-red-400 mt-4 text-center">{error}</p>}
       
       {resultado && (
