@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server'
 
-async function subirImagenABase64(archivo: File) {
-  const buffer = await archivo.arrayBuffer()
-  const base64 = Buffer.from(buffer).toString('base64')
-  return `data:${archivo.type};base64,${base64}`
-}
+export const maxDuration = 60
 
 export async function POST(req: Request) {
   try {
@@ -24,10 +20,12 @@ export async function POST(req: Request) {
     }
 
     if (foto) {
-      input.ip_adapter_image = await subirImagenABase64(foto)
+      const buffer = Buffer.from(await foto.arrayBuffer())
+      const base64 = `data:${foto.type};base64,${buffer.toString('base64')}`
+      input.ip_adapter_image = base64
     }
 
-    const respuesta = await fetch('https://api.replicate.com/v1/predictions', {
+    const crear = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
@@ -39,27 +37,27 @@ export async function POST(req: Request) {
       })
     })
 
-    const datos = await respuesta.json()
-    if (!respuesta.ok) throw new Error(datos.error || 'Error al generar')
+    const prediccion = await crear.json()
+    if (!crear.ok) throw new Error(prediccion.error || 'Error al generar')
 
-    // Esperamos a que termine de generar
-    let prediccion = datos
-    while (prediccion.status !== 'succeeded' && prediccion.status !== 'failed') {
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      const revisar = await fetch(`https://api.replicate.com/v1/predictions/${prediccion.id}`, {
+    let estado = prediccion
+    while (estado.status !== 'succeeded' && estado.status !== 'failed') {
+      await new Promise(res => setTimeout(res, 2000))
+      const revisar = await fetch(`https://api.replicate.com/v1/predictions/${estado.id}`, {
         headers: { 'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}` }
       })
-      prediccion = await revisar.json()
+      estado = await revisar.json()
     }
 
-    if (prediccion.status === 'failed') {
+    if (estado.status === 'failed') {
       return NextResponse.json({ error: 'No se pudo generar la imagen' }, { status: 500 })
     }
 
-    return NextResponse.json({ imagen: prediccion.output?.[0] || prediccion.output })
+    return NextResponse.json({ imagen: estado.output?.[0] || estado.output })
 
-  } catch (error) {
-    console.error(error)
-    return NextResponse.json({ error: 'Algo salió mal' }, { status: 500 })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Algo salió mal al procesar' }, { status: 500 })
   }
 }
+
