@@ -1,4 +1,13 @@
 import { NextResponse } from 'next/server'
+import { v2 as cloudinary } from 'cloudinary'
+
+// Configurar Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+})
 
 export async function POST(req: Request) {
   try {
@@ -12,6 +21,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Sube una imagen de referencia' }, { status: 400 })
     }
 
+    // 1. Subir la imagen a Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(image, {
+      folder: 'besoia-references',
+      resource_type: 'image',
+    })
+
+    const imageUrl = uploadResult.secure_url
+
+    // 2. Llamar a Replicate (InstantID)
     const createRes = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -22,7 +40,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         version: 'grandlineai/instant-id-photorealistic:03914a0c3326bf44383d0cd84b06822618af879229ce5d1d53bef38d93b68279',
         input: {
-          image: image,
+          image: imageUrl,
           prompt: prompt,
           negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy, extra limbs, watermark, text, cartoon, anime, drawing, plastic skin, oversaturated',
           width: 832,
@@ -42,8 +60,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
-    // Polling
-    for (let i = 0; i < 90; i++) {
+    // 3. Polling (3 minutos)
+    for (let i = 0; i < 180; i++) {
       if (result.status === 'succeeded') break
       if (result.status === 'failed' || result.status === 'canceled') {
         return NextResponse.json({ error: result.error || 'La generación falló' }, { status: 500 })
@@ -64,13 +82,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Tiempo de espera agotado' }, { status: 504 })
     }
 
-    const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output
+    const finalImage = Array.isArray(result.output) ? result.output[0] : result.output
 
-    if (!imageUrl) {
+    if (!finalImage) {
       return NextResponse.json({ error: 'No se obtuvo la imagen' }, { status: 500 })
     }
 
-    return NextResponse.json({ image: imageUrl })
+    return NextResponse.json({ image: finalImage })
 
   } catch (error: any) {
     console.error(error)
