@@ -2,17 +2,29 @@ import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
   try {
-    const input = await req.json()
+    // 🔍 Primero leemos lo que llega tal cual
+    const cuerpoCrudo = await req.text()
+    console.log('Cuerpo recibido:', cuerpoCrudo)
 
-    // Validación obligatoria
-    if (input.ip_adapter_image && typeof input.ip_adapter_image !== 'string') {
+    let input
+    try {
+      input = JSON.parse(cuerpoCrudo)
+    } catch {
       return NextResponse.json(
-        { error: 'La imagen debe ser una dirección web válida' },
+        { error: 'Formato incorrecto, no es un JSON válido' },
         { status: 400 }
       )
     }
 
-    console.log('Enviando a Replicate:', input)
+    // Validación
+    if (input.ip_adapter_image && typeof input.ip_adapter_image !== 'string') {
+      return NextResponse.json(
+        { error: 'La imagen debe ser una dirección web' },
+        { status: 400 }
+      )
+    }
+
+    console.log('Datos listos para Replicate:', input)
 
     const crear = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
@@ -24,7 +36,7 @@ export async function POST(req: Request) {
         version: 'lucataco/realvis-xl-v4:cf1669214b850d270608093c2a068b07292125c1',
         input: {
           prompt: input.prompt,
-          negative_prompt: 'feo, deformado, manos mal hechas, borroso, baja calidad, mala anatomía',
+          negative_prompt: 'feo, deformado, manos mal hechas, borroso, baja calidad',
           num_inference_steps: 30,
           guidance_scale: 7.5,
           ...(input.ip_adapter_image && { ip_adapter_image: input.ip_adapter_image })
@@ -33,7 +45,7 @@ export async function POST(req: Request) {
     })
 
     const textoRespuesta = await crear.text()
-    console.log('Respuesta cruda:', textoRespuesta)
+    console.log('Respuesta Replicate:', textoRespuesta)
 
     let prediccion
     try {
@@ -60,7 +72,6 @@ export async function POST(req: Request) {
       
       estado = await revisar.json()
       intentos++
-      console.log('Estado generación:', estado.status)
     }
 
     if (estado.status === 'failed') {
@@ -80,4 +91,5 @@ export async function POST(req: Request) {
     }, { status: 500 })
   }
 }
+
 
