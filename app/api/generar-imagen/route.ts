@@ -12,47 +12,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Sube una imagen de referencia' }, { status: 400 })
     }
 
-    // ========== Subir imagen a Cloudinary (sin librería) ==========
+    // ========== Subir imagen a Cloudinary ==========
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+
     const formData = new FormData()
     formData.append('file', image)
-    formData.append('upload_preset', 'ml_default') // ← si tienes un preset unsigned, ponlo aquí. Si no, usamos firmado abajo
-
-    // Versión firmada (más segura)
-    const timestamp = Math.round(new Date().getTime() / 1000)
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
-    const apiKey = process.env.CLOUDINARY_API_KEY
-    const apiSecret = process.env.CLOUDINARY_API_SECRET
-
-    // Generar firma simple
-    const signatureString = `timestamp=\( {timestamp} \){apiSecret}`
-    const encoder = new TextEncoder()
-    const data = encoder.encode(signatureString)
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    formData.append('upload_preset', 'besoia_upload')
+    formData.append('folder', 'besoia-references')
 
     const cloudinaryRes = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
       {
         method: 'POST',
-        body: JSON.stringify({
-          file: image,
-          api_key: apiKey,
-          timestamp: timestamp,
-          signature: signature,
-          folder: 'besoia-references'
-        }),
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        body: formData,
       }
     )
 
     const cloudinaryData = await cloudinaryRes.json()
 
     if (!cloudinaryData.secure_url) {
-      console.error(cloudinaryData)
-      return NextResponse.json({ error: 'Error subiendo imagen a Cloudinary' }, { status: 500 })
+      console.error('Cloudinary error:', cloudinaryData)
+      return NextResponse.json({ 
+        error: 'Error subiendo imagen a Cloudinary: ' + (cloudinaryData.error?.message || JSON.stringify(cloudinaryData)) 
+      }, { status: 500 })
     }
 
     const imageUrl = cloudinaryData.secure_url
@@ -88,7 +70,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
-    // Polling
+    // Polling (3 minutos)
     for (let i = 0; i < 180; i++) {
       if (result.status === 'succeeded') break
       if (result.status === 'failed' || result.status === 'canceled') {
