@@ -1,12 +1,4 @@
 import { NextResponse } from 'next/server'
-import { v2 as cloudinary } from 'cloudinary'
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-})
 
 export async function POST(req: Request) {
   try {
@@ -20,15 +12,52 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Sube una imagen de referencia' }, { status: 400 })
     }
 
-    // Subir a Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(image, {
-      folder: 'besoia-references',
-      resource_type: 'image',
-    })
+    // ========== Subir imagen a Cloudinary (sin librería) ==========
+    const formData = new FormData()
+    formData.append('file', image)
+    formData.append('upload_preset', 'ml_default') // ← si tienes un preset unsigned, ponlo aquí. Si no, usamos firmado abajo
 
-    const imageUrl = uploadResult.secure_url
+    // Versión firmada (más segura)
+    const timestamp = Math.round(new Date().getTime() / 1000)
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+    const apiKey = process.env.CLOUDINARY_API_KEY
+    const apiSecret = process.env.CLOUDINARY_API_SECRET
 
-    // Llamar a Replicate - modelo más estable
+    // Generar firma simple
+    const signatureString = `timestamp=\( {timestamp} \){apiSecret}`
+    const encoder = new TextEncoder()
+    const data = encoder.encode(signatureString)
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    const cloudinaryRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          file: image,
+          api_key: apiKey,
+          timestamp: timestamp,
+          signature: signature,
+          folder: 'besoia-references'
+        }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+
+    const cloudinaryData = await cloudinaryRes.json()
+
+    if (!cloudinaryData.secure_url) {
+      console.error(cloudinaryData)
+      return NextResponse.json({ error: 'Error subiendo imagen a Cloudinary' }, { status: 500 })
+    }
+
+    const imageUrl = cloudinaryData.secure_url
+
+    // ========== Llamar a Replicate ==========
     const createRes = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -59,7 +88,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
-    // Polling 3 minutos
+    // Polling
     for (let i = 0; i < 180; i++) {
       if (result.status === 'succeeded') break
       if (result.status === 'failed' || result.status === 'canceled') {
