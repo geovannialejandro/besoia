@@ -21,8 +21,8 @@ export function BesoiaGenerator() {
   const [resultado, setResultado] = useState<{ tipo: 'imagen'; url: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // ✅ Subir imagen a Cloudinary correctamente
   async function subirImagen(file: File) {
+    console.log('📤 Subiendo imagen a Cloudinary...')
     const formData = new FormData()
     formData.append('file', file)
     formData.append('upload_preset', 'besoia_upload')
@@ -35,6 +35,7 @@ export function BesoiaGenerator() {
 
     if (!res.ok) throw new Error('No se pudo subir la imagen')
     const datos = await res.json()
+    console.log('✅ Imagen subida:', datos.secure_url)
     return datos.secure_url
   }
 
@@ -42,10 +43,15 @@ export function BesoiaGenerator() {
     const archivo = e.target.files?.[0] || null
     setArchivoSeleccionado(archivo)
     setVistaPrevia(archivo ? URL.createObjectURL(archivo) : null)
+    setError(null)
+    setResultado(null)
   }
 
   async function handleGenerate() {
-    if (!prompt.trim()) return
+    if (!prompt.trim()) {
+      setError('Escribe una descripción')
+      return
+    }
     setCargando(true)
     setError(null)
     setResultado(null)
@@ -56,6 +62,7 @@ export function BesoiaGenerator() {
         urlImagen = await subirImagen(archivoSeleccionado)
       }
 
+      console.log('🚀 Mandando a generar...')
       const respuesta = await fetch('/api/generar-imagen', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,12 +73,14 @@ export function BesoiaGenerator() {
       })
 
       const datos = await respuesta.json()
+      console.log('📥 Respuesta recibida:', datos)
+
       if (!respuesta.ok) throw new Error(datos.error || 'No se pudo generar')
       setResultado({ tipo: 'imagen', url: datos.imagen })
 
-    } catch (err) {
-      console.error('Error:', err)
-      setError(err instanceof Error ? err.message : 'Algo salió mal')
+    } catch (err: any) {
+      console.error('❌ Error:', err)
+      setError(err.message || 'Algo salió mal')
     } finally {
       setCargando(false)
     }
@@ -111,30 +120,30 @@ export function BesoiaGenerator() {
       <Button
         onClick={handleGenerate}
         disabled={cargando || !prompt.trim()}
-        className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3"
+        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 text-lg"
       >
         {cargando ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
         {cargando ? 'Generando...' : 'Crear Imagen'}
       </Button>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+        <div className="p-3 bg-red-50 border border-red-300 text-red-700 rounded-lg text-sm font-medium">
           ❌ {error}
         </div>
       )}
 
       {resultado && (
         <div className="space-y-3 mt-4">
-          <p className="font-medium">Resultado:</p>
-          <img src={resultado.url} alt="Generada" className="w-full rounded-lg shadow-lg" />
+          <p className="font-semibold text-green-700">✅ ¡Listo!</p>
+          <img src={resultado.url} alt="Imagen generada" className="w-full rounded-lg shadow-lg" />
           <a
             href={resultado.url}
             download
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-amber-700 hover:text-amber-900 text-sm font-medium"
+            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
           >
-            <Download className="w-4 h-4" /> Descargar
+            <Download className="w-4 h-4" /> Descargar imagen
           </a>
         </div>
       )}
