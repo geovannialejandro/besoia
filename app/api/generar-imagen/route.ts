@@ -8,38 +8,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Escribe tu descripción' }, { status: 400 })
     }
 
-    if (!image) {
-      return NextResponse.json({ error: 'Sube una imagen de referencia' }, { status: 400 })
-    }
+    // ========== Subir imagen a Cloudinary (si mandaron imagen) ==========
+    let imageUrl = null
 
-    // ========== Subir imagen a Cloudinary ==========
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+    if (image) {
+      const cloudName = process.env.CLOUDINARY_CLOUD_NAME
 
-    const formData = new FormData()
-    formData.append('file', image)
-    formData.append('upload_preset', 'besoia_upload')
-    formData.append('folder', 'besoia-references')
+      const formData = new FormData()
+      formData.append('file', image)
+      formData.append('upload_preset', 'besoia_upload')
+      formData.append('folder', 'besoia-references')
 
-    const cloudinaryRes = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      {
-        method: 'POST',
-        body: formData,
+      const cloudinaryRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      )
+
+      const cloudinaryData = await cloudinaryRes.json()
+
+      if (cloudinaryData.secure_url) {
+        imageUrl = cloudinaryData.secure_url
       }
-    )
-
-    const cloudinaryData = await cloudinaryRes.json()
-
-    if (!cloudinaryData.secure_url) {
-      console.error('Cloudinary error:', cloudinaryData)
-      return NextResponse.json({ 
-        error: 'Error subiendo imagen a Cloudinary: ' + (cloudinaryData.error?.message || JSON.stringify(cloudinaryData)) 
-      }, { status: 500 })
     }
 
-    const imageUrl = cloudinaryData.secure_url
-
-    // ========== Llamar a Replicate ==========
+    // ========== Llamar a Replicate - RealVisXL (uncensored) ==========
     const createRes = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -48,18 +43,19 @@ export async function POST(req: Request) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        version: 'zsxkib/instant-id:2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789',
+        version: 'adirik/realvisxl-v4.0:85a58cc71587cc27539b7c83eb1ce4aea02feedfb9a9fae0598cebc110a3d695',
         input: {
-          image: imageUrl,
           prompt: prompt,
-          negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy, extra limbs, watermark, text, cartoon, anime, drawing, plastic skin',
+          negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy, extra limbs, watermark, text, cartoon, anime, drawing, illustration, 3d, render, plastic skin',
+          image: imageUrl,                    // referencia (opcional)
+          prompt_strength: imageUrl ? 0.75 : 1, // qué tanto respeta la imagen de referencia
           width: 832,
           height: 1216,
           num_inference_steps: 30,
-          guidance_scale: 5,
-          ip_adapter_scale: 0.8,
-          controlnet_conditioning_scale: 0.8,
-          disable_safety_checker: true
+          guidance_scale: 5.5,
+          scheduler: 'DPM++_SDE_Karras',
+          disable_safety_checker: true,
+          apply_watermark: false
         },
       }),
     })
@@ -70,8 +66,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
-    // Polling (3 minutos)
-    for (let i = 0; i < 180; i++) {
+    // Polling
+    for (let i = 0; i < 120; i++) {
       if (result.status === 'succeeded') break
       if (result.status === 'failed' || result.status === 'canceled') {
         return NextResponse.json({ error: result.error || 'La generación falló' }, { status: 500 })
