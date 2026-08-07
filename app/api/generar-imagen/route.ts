@@ -12,14 +12,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Formato incorrecto' }, { status: 400 })
     }
 
-    // Validar que la imagen sea URL válida
     if (input.ip_adapter_image) {
       if (typeof input.ip_adapter_image !== 'string' || !input.ip_adapter_image.startsWith('http')) {
-        return NextResponse.json({ error: 'Solo se acepta enlaces de imagen', status: 400 })
+        return NextResponse.json({ error: 'La imagen debe subirse primero', status: 400 })
       }
     }
 
-    // ✅ Modelo confirmado: acepta ip_adapter_image + sin censura + realismo
     const crear = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -30,12 +28,12 @@ export async function POST(req: Request) {
         version: 'lucataco/juggernaut-xl-v9:bea09cf018e513cef0841719559ea86d2299e05448633ac8fe270b5d5cd6778c',
         input: {
           prompt: input.prompt,
-          negative_prompt: 'cara distinta, rasgos cambiados, feo, deformado, manos mal hechas, borroso, baja calidad, dibujo, caricatura',
-          num_inference_steps: 30,
-          guidance_scale: 7,
+          negative_prompt: 'cara distinta, rasgos cambiados, feo, deformado, manos mal hechas, borroso, baja calidad',
+          num_inference_steps: 35,
+          guidance_scale: 7.5,
           disable_safety_checker: true,
           ip_adapter_image: input.ip_adapter_image,
-          ip_adapter_scale: 0.85
+          ip_adapter_scale: 0.8
         }
       })
     })
@@ -47,14 +45,13 @@ export async function POST(req: Request) {
     try {
       prediccion = JSON.parse(textoRespuesta)
     } catch {
-      return NextResponse.json({ error: 'Error en el servidor', detalle: textoRespuesta }, { status: 500 })
+      return NextResponse.json({ error: 'Error en Replicate', detalle: textoRespuesta }, { status: 500 })
     }
 
     if (!crear.ok) {
-      return NextResponse.json({ error: 'Error de Replicate', detalle: prediccion.error || textoRespuesta }, { status: crear.status })
+      return NextResponse.json({ error: 'Error de Replicate', detalle: prediccion.error }, { status: crear.status })
     }
 
-    // Esperar resultado
     let estado = prediccion
     let intentos = 0
     while (estado.status !== 'succeeded' && estado.status !== 'failed' && intentos < 60) {
@@ -67,7 +64,7 @@ export async function POST(req: Request) {
     }
 
     if (estado.status === 'failed') {
-      return NextResponse.json({ error: 'No se pudo generar', detalle: estado.error }, { status: 500 })
+      return NextResponse.json({ error: 'Falló', detalle: estado.error }, { status: 500 })
     }
 
     const urlImagen = Array.isArray(estado.output) ? estado.output[0] : estado.output
