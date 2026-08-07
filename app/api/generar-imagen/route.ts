@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     if (input.ip_adapter_image) {
       if (typeof input.ip_adapter_image !== 'string' || !input.ip_adapter_image.startsWith('http')) {
-        return NextResponse.json({ error: 'La imagen debe ser una dirección web válida' }, { status: 400 })
+        return NextResponse.json({ error: 'La imagen debe ser una dirección web válida', status: 400 })
       }
     }
 
@@ -25,11 +25,11 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        version: 'tencentarc/photomaker:bff99d48b9991c1c5043747d107510cd178d41028d607f7c170690a8d490079a',
+        version: 'lucataco/realistic-vision-v5.1-ipadapter:cf1669214b850d270608093c2a068b07292125c1',
         input: {
           prompt: input.prompt,
-          negative_prompt: 'cara distinta, rasgos cambiados, feo, deformado, manos mal hechas, borroso, baja calidad, dibujo, caricatura',
-          num_inference_steps: 50,
+          negative_prompt: 'cara distinta, rasgos cambiados, feo, deformado, manos mal hechas, borroso, baja calidad',
+          num_inference_steps: 35,
           guidance_scale: 7.5,
           disable_safety_checker: true,
           ip_adapter_image: input.ip_adapter_image
