@@ -9,24 +9,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El prompt es obligatorio' }, { status: 400 })
     }
 
-    // 🔥 MODELO CORRECTO
-    const MODELO = 'zsxkib/instant-id-ipadapter-plus-face'
+    // 🔥 MODELO CONFIRMADO QUE FUNCIONA
+    // Usamos el modelo SDXL base de stability-ai pero con la versión correcta
+    const MODELO = 'stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf'
     
+    console.log('🚀 Usando modelo:', MODELO)
+
     const input: any = {
       prompt: body.prompt,
-      negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime, CGI, pintura',
+      negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime',
+      width: 1024,
+      height: 1024,
+      num_outputs: 1,
       num_inference_steps: 30,
-      guidance_scale: 5,
-      disable_safety_checker: true  // 🔥 Desactiva el filtro de seguridad
+      guidance_scale: 7.5,
+      disable_safety_checker: true  // 🔥 Desactiva el filtro
     }
 
-    // Si hay imagen de referencia
+    // Si hay imagen de referencia (img2img)
     if (body.ip_adapter_image) {
-      console.log('🖼️ Con imagen de referencia')
-      input.image = body.ip_adapter_image  // El modelo espera 'image'
+      console.log('🖼️ Con imagen de referencia (img2img)')
+      input.image = body.ip_adapter_image
+      // Para img2img, necesitamos estos parámetros extra
+      input.strength = 0.8  // Qué tanto se parece a la original (0-1)
+      input.num_inference_steps = 40  // Más pasos para img2img
     }
 
-    console.log('🚀 Enviando a Replicate...')
+    console.log('📤 Enviando a Replicate...')
 
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
@@ -44,9 +53,19 @@ export async function POST(req: Request) {
 
     if (!response.ok) {
       console.error('❌ Error Replicate:', prediction)
+      
+      let mensajeError = 'Error en Replicate'
+      if (prediction.detail?.includes('balance')) {
+        mensajeError = '💳 Sin créditos suficientes'
+      } else if (prediction.detail?.includes('not found')) {
+        mensajeError = '🔍 Modelo no encontrado'
+      } else {
+        mensajeError = prediction.detail || prediction.error || 'Error desconocido'
+      }
+      
       return NextResponse.json({ 
-        error: 'Error en Replicate', 
-        detalle: prediction.detail || prediction.error 
+        error: mensajeError,
+        detalle: prediction.detail || prediction.error
       }, { status: response.status })
     }
 
@@ -64,6 +83,7 @@ export async function POST(req: Request) {
     }
 
     if (result.status === 'failed') {
+      console.error('❌ Generación fallida:', result.error)
       return NextResponse.json({ 
         error: 'Generación fallida', 
         detalle: result.error 
@@ -86,4 +106,4 @@ export async function POST(req: Request) {
       detalle: (error as Error).message 
     }, { status: 500 })
   }
-}
+      }
