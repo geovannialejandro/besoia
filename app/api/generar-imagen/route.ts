@@ -2,102 +2,73 @@ import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
   try {
-    const { prompt, image } = await req.json()
+    const cuerpoCrudo = await req.text()
+    console.log('Datos recibidos:', cuerpoCrudo)
 
-    if (!prompt) {
-      return NextResponse.json({ error: 'Escribe tu descripción' }, { status: 400 })
+    let input
+    try {
+      input = JSON.parse(cuerpoCrudo)
+    } catch {
+      return NextResponse.json({ error: 'Formato incorrecto' }, { status: 400 })
     }
 
-    // ========== Subir imagen a Cloudinary (si mandaron imagen) ==========
-    let imageUrl = null
-
-    if (image) {
-      const cloudName = process.env.CLOUDINARY_CLOUD_NAME
-
-      const formData = new FormData()
-      formData.append('file', image)
-      formData.append('upload_preset', 'besoia_upload')
-      formData.append('folder', 'besoia-references')
-
-      const cloudinaryRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      )
-
-      const cloudinaryData = await cloudinaryRes.json()
-
-      if (cloudinaryData.secure_url) {
-        imageUrl = cloudinaryData.secure_url
+    if (input.ip_adapter_image) {
+      if (typeof input.ip_adapter_image !== 'string' || !input.ip_adapter_image.startsWith('http')) {
+        return NextResponse.json({ error: 'La imagen debe ser una dirección web válida' }, { status: 400 })
       }
     }
 
-    // ========== Llamar a Replicate - RealVisXL (uncensored) ==========
-    const createRes = await fetch('https://api.replicate.com/v1/predictions', {
+    const crear = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        version: 'adirik/realvisxl-v4.0:85a58cc71587cc27539b7c83eb1ce4aea02feedfb9a9fae0598cebc110a3d695',
+        version: 'tencentarc/photomaker:bff99d48b9991c1c5043747d107510cd178d41028d607f7c170690a8d490079a',
         input: {
-          prompt: prompt,
-          negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy, extra limbs, watermark, text, cartoon, anime, drawing, illustration, 3d, render, plastic skin',
-          image: imageUrl,                    // referencia (opcional)
-          prompt_strength: imageUrl ? 0.75 : 1, // qué tanto respeta la imagen de referencia
-          width: 832,
-          height: 1216,
-          num_inference_steps: 30,
-          guidance_scale: 5.5,
-          scheduler: 'DPM++_SDE_Karras',
+          prompt: input.prompt,
+          negative_prompt: 'cara distinta, rasgos cambiados, feo, deformado, manos mal hechas, borroso, baja calidad, dibujo, caricatura',
+          num_inference_steps: 50,
+          guidance_scale: 7.5,
           disable_safety_checker: true,
-          apply_watermark: false
-        },
-      }),
-    })
-
-    let result = await createRes.json()
-
-    if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: 400 })
-    }
-
-    // Polling
-    for (let i = 0; i < 120; i++) {
-      if (result.status === 'succeeded') break
-      if (result.status === 'failed' || result.status === 'canceled') {
-        return NextResponse.json({ error: result.error || 'La generación falló' }, { status: 500 })
-      }
-
-      await new Promise(r => setTimeout(r, 1000))
-
-      const pollRes = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
-        headers: {
-          'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
-          'Accept': 'application/json'
+          ip_adapter_image: input.ip_adapter_image
         }
       })
-      result = await pollRes.json()
+    })
+
+    const textoRespuesta = await crear.text()
+    console.log('Respuesta Replicate:', textoRespuesta)
+
+    let prediccion
+    try {
+      prediccion = JSON.parse(textoRespuesta)
+    } catch {
+      throw new Error(`Respuesta inválida: ${textoRespuesta}`)
     }
 
-    if (result.status !== 'succeeded') {
-      return NextResponse.json({ error: 'Tiempo de espera agotado' }, { status: 504 })
+    if (!crear.ok) throw new Error(prediccion.error || `Error ${crear.status}`)
+
+    let estado = prediccion
+    let intentos = 0
+    while (estado.status !== 'succeeded' && estado.status !== 'failed' && intentos < 50) {
+      await new Promise(res => setTimeout(res, 2000))
+      const revisar = await fetch(`https://api.replicate.com/v1/predictions/${estado.id}`, {
+        headers: { 'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}` }
+      })
+      estado = await revisar.json()
+      intentos++
     }
 
-    const finalImage = Array.isArray(result.output) ? result.output[0] : result.output
-
-    if (!finalImage) {
-      return NextResponse.json({ error: 'No se obtuvo la imagen' }, { status: 500 })
+    if (estado.status === 'failed') {
+      return NextResponse.json({ error: 'Falló', detalle: estado.error }, { status: 500 })
     }
 
-    return NextResponse.json({ image: finalImage })
+    const urlImagen = Array.isArray(estado.output) ? estado.output[0] : estado.output
+    return NextResponse.json({ imagen: urlImagen })
 
-  } catch (error: any) {
-    console.error(error)
-    return NextResponse.json({ error: error.message || 'Error generando imagen' }, { status: 500 })
+  } catch (err) {
+    console.error('Error total:', err)
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 })
   }
 }
