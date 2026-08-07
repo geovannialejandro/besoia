@@ -1,5 +1,5 @@
 import { ShieldCheck, Zap, Sparkles } from 'lucide-react'
-import BesoiaGenerator from './besoia-generator'
+import { BesoiaGenerator } from './besoia-generator'
 
 export default function Page() {
   return (
@@ -13,17 +13,17 @@ export default function Page() {
       <header className="flex flex-col items-center text-center">
         <div className="mt-10">
           <img
-            src="https://via.placeholder.com/900x500?text=Ejemplo+BESOIA"
-            alt="demo"
+            src="https://picsum.photos/900/500"
+            alt="Ejemplo BESOIA"
             className="rounded-2xl shadow-lg"
           />
         </div>
         <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-border px-4 py-1.5 text-xs font-medium tracking-wide text-muted-foreground">
-          <Sparkles className="size-3.5" aria-hidden="true" />
+          <Sparkles className="w-4 h-4" aria-hidden="true" />
           Inteligencia artificial de última generación
         </span>
 
-        {/* ✅ Aquí el besito al lado izquierdo */}
+        {/* Título con el besito */}
         <h1 className="text-balance font-serif text-6xl font-bold leading-none tracking-tight text-primary sm:text-7xl md:text-8xl flex items-center gap-3">
           <span aria-hidden="true" className="text-7xl">💋</span>
           BESOIA
@@ -68,7 +68,7 @@ export default function Page() {
             key={title}
             className="rounded-2xl border border-border bg-card/40 p-5 text-center"
           >
-            <Icon className="mx-auto mb-3 size-6 text-primary" aria-hidden="true" />
+            <Icon className="mx-auto mb-3 w-6 h-6 text-primary" aria-hidden="true" />
             <h3 className="font-serif text-lg font-semibold text-foreground">{title}</h3>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{text}</p>
           </div>
