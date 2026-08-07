@@ -9,24 +9,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El prompt es obligatorio' }, { status: 400 })
     }
 
-    // 🔥 MODELO QUE SÍ FUNCIONA CON disable_safety_checker
-    const MODELO = 'lucataco/realistic-vision-v5.1-hyper:cf1669214b850d270608093c2a068b07292125c1'
+    // 🔥 MODELO QUE SÍ FUNCIONA
+    const MODELO = 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b'
     
     console.log('🚀 Usando modelo:', MODELO)
 
-    const input: any = {
+    const input = {
       prompt: body.prompt,
-      negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime, CGI, pintura, mala anatomía',
+      negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime, CGI, pintura',
       num_inference_steps: 30,
-      guidance_scale: 5,
-      // 🔥 CLAVE: Desactivar el filtro de seguridad
+      guidance_scale: 7.5,
+      width: 1024,
+      height: 1024,
       disable_safety_checker: true
-    }
-
-    // Si hay imagen de referencia (opcional, pero funciona con este modelo)
-    if (body.ip_adapter_image) {
-      console.log('🖼️ Con imagen de referencia')
-      input.image = body.ip_adapter_image
     }
 
     console.log('📤 Enviando a Replicate...')
