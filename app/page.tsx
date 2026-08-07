@@ -1,5 +1,5 @@
 import { ShieldCheck, Zap, Sparkles } from 'lucide-react'
-import { BesoiaGenerator } from './besoia-generator'
+import BesoiaGenerator from './besoia-generator'
 
 export default function Page() {
   return (
@@ -12,12 +12,12 @@ export default function Page() {
 
       <header className="flex flex-col items-center text-center">
         <div className="mt-10">
-  <img
-    src="https://via.placeholder.com/900x500?text=Ejemplo+BESOIA"
-    alt="demo"
-    className="rounded-2xl shadow-lg"
-  />
-</div>
+          <img
+            src="https://via.placeholder.com/900x500?text=Ejemplo+BESOIA"
+            alt="demo"
+            className="rounded-2xl shadow-lg"
+          />
+        </div>
         <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-border px-4 py-1.5 text-xs font-medium tracking-wide text-muted-foreground">
           <Sparkles className="size-3.5" aria-hidden="true" />
           Inteligencia artificial de última generación
@@ -81,4 +81,3 @@ export default function Page() {
     </main>
   )
 }
-
