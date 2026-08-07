@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, Download, Sparkles } from 'lucide-react'
+import { Loader2, Download, Sparkles, Upload } from 'lucide-react'
 
 const Button = ({ children, onClick, disabled, className }: any) => (
   <button
@@ -15,36 +15,67 @@ const Button = ({ children, onClick, disabled, className }: any) => (
 
 export function BesoiaGenerator() {
   const [prompt, setPrompt] = useState('')
+  const [archivoSeleccionado, setArchivoSeleccionado] = useState<File | null>(null)
+  const [vistaPrevia, setVistaPrevia] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
   const [resultado, setResultado] = useState<{ tipo: 'imagen'; url: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // 📤 Función para subir la imagen de referencia a Cloudinary
+  async function subirImagen(file: File) {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('upload_preset', 'besoia_upload')
+    formData.append('cloud_name', 'yysjrhit')
+
+    const res = await fetch('https://api.cloudinary.com/v1_1/yysjrhit/image/upload', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!res.ok) throw new Error('No se pudo subir la imagen de referencia')
+    const datos = await res.json()
+    return datos.secure_url
+  }
+
+  function alSeleccionarArchivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const archivo = e.target.files?.[0] || null
+    setArchivoSeleccionado(archivo)
+    setVistaPrevia(archivo ? URL.createObjectURL(archivo) : null)
+  }
 
   async function handleGenerate() {
     if (!prompt.trim()) {
       setError('Por favor, escribe una descripción')
       return
     }
-    
+
     setCargando(true)
     setError(null)
     setResultado(null)
 
     try {
+      let urlImagen = null
+      if (archivoSeleccionado) {
+        urlImagen = await subirImagen(archivoSeleccionado)
+      }
+
+      // 🔥 LLAMADA AL BACKEND
       const respuesta = await fetch('/api/generar-imagen', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: prompt
-          // ⚠️ SIN imagen de referencia
+          prompt: prompt,
+          ip_adapter_image: urlImagen // Se envía solo si hay imagen de referencia
         })
       })
 
       const datos = await respuesta.json()
-      
+
       if (!respuesta.ok) {
         throw new Error(datos.error || datos.detalle || 'Error al generar la imagen')
       }
-      
+
       setResultado({ tipo: 'imagen', url: datos.imagen })
 
     } catch (err) {
@@ -65,6 +96,28 @@ export function BesoiaGenerator() {
           placeholder="Ej: Una foto profesional de una persona en un estudio, iluminación suave, fondo neutro..."
           className="w-full p-3 rounded-lg border resize-none h-24"
         />
+      </div>
+
+      <div className="space-y-2">
+        <label className="font-medium">🖼️ Imagen de referencia (opcional):</label>
+        <div className="flex items-center gap-2">
+          <Upload className="w-5 h-5 text-gray-500" />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={alSeleccionarArchivo}
+            className="text-sm"
+          />
+          {archivoSeleccionado && (
+            <span className="text-xs text-green-600">✅ {archivoSeleccionado.name}</span>
+          )}
+        </div>
+        {vistaPrevia && (
+          <div className="mt-2">
+            <p className="text-sm text-gray-600 mb-1">Vista previa:</p>
+            <img src={vistaPrevia} alt="Vista previa" className="max-h-40 rounded-lg border" />
+          </div>
+        )}
       </div>
 
       <Button
