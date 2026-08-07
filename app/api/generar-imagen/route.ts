@@ -9,19 +9,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El prompt es obligatorio' }, { status: 400 })
     }
 
-    // 🔥 MODELO QUE SÍ FUNCIONA
-    const MODELO = 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b'
+    // 🔥 EL MODELO JUGGERNAUT QUE SÍ DA LA CARA
+    const MODELO = 'sdxl-based/juggernaut-xl-lightning'
     
     console.log('🚀 Usando modelo:', MODELO)
 
     const input = {
       prompt: body.prompt,
       negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime, CGI, pintura',
+      // 🔥 PARÁMETROS PARA EL REALISMO DE JUGGERNAUT
       num_inference_steps: 30,
-      guidance_scale: 7.5,
+      guidance_scale: 7,            // [citation:2]
       width: 1024,
       height: 1024,
-      disable_safety_checker: true
+      disable_safety_checker: true  // 🔥 EL PARÁMETRO MÁGICO
     }
 
     console.log('📤 Enviando a Replicate...')
