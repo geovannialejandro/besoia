@@ -32,7 +32,7 @@ export function BesoiaGenerator() {
       body: formData
     })
 
-    if (!res.ok) throw new Error('No se pudo subir la imagen de referencia')
+    if (!res.ok) throw new Error('No se pudo subir la imagen')
     const datos = await res.json()
     return datos.secure_url
   }
@@ -48,7 +48,7 @@ export function BesoiaGenerator() {
       setError('Por favor, escribe una descripción')
       return
     }
-    
+
     setCargando(true)
     setError(null)
     setResultado(null)
@@ -69,16 +69,16 @@ export function BesoiaGenerator() {
       })
 
       const datos = await respuesta.json()
-      
+
       if (!respuesta.ok) {
         throw new Error(datos.error || datos.detalle || 'Error al generar la imagen')
       }
-      
+
       setResultado({ tipo: 'imagen', url: datos.imagen })
 
     } catch (err) {
-      console.error('Error en generación:', err)
-      setError(err instanceof Error ? err.message : 'Ocurrió un error inesperado')
+      console.error('Error:', err)
+      setError(err instanceof Error ? err.message : 'Algo salió mal')
     } finally {
       setCargando(false)
     }
@@ -91,7 +91,7 @@ export function BesoiaGenerator() {
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Ej: Una foto profesional de una persona en un estudio, iluminación suave, fondo neutro..."
+          placeholder="Ej: Una foto profesional de una persona en un estudio, iluminación suave, fondo oscuro..."
           className="w-full p-3 rounded-lg border resize-none h-24"
         />
       </div>
@@ -124,7 +124,7 @@ export function BesoiaGenerator() {
         className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3"
       >
         {cargando ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
-        {cargando ? 'Generando... (puede tomar unos segundos)' : '🚀 Generar Imagen'}
+        {cargando ? '⏳ Generando...' : '🚀 Generar Imagen'}
       </Button>
 
       {error && (
@@ -150,4 +150,4 @@ export function BesoiaGenerator() {
       )}
     </div>
   )
-    }
+}
