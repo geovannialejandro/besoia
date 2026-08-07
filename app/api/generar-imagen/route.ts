@@ -9,30 +9,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El prompt es obligatorio' }, { status: 400 })
     }
 
-    // 🔥 MODELO CONFIRMADO QUE FUNCIONA
-    // Usamos el modelo SDXL base de stability-ai pero con la versión correcta
-    const MODELO = 'stability-ai/stable-diffusion:db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf'
+    // 🔥 MODELO QUE SÍ FUNCIONA CON disable_safety_checker
+    const MODELO = 'lucataco/realistic-vision-v5.1-hyper:cf1669214b850d270608093c2a068b07292125c1'
     
     console.log('🚀 Usando modelo:', MODELO)
 
     const input: any = {
       prompt: body.prompt,
-      negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime',
-      width: 1024,
-      height: 1024,
-      num_outputs: 1,
+      negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime, CGI, pintura, mala anatomía',
       num_inference_steps: 30,
-      guidance_scale: 7.5,
-      disable_safety_checker: true  // 🔥 Desactiva el filtro
+      guidance_scale: 5,
+      // 🔥 CLAVE: Desactivar el filtro de seguridad
+      disable_safety_checker: true
     }
 
-    // Si hay imagen de referencia (img2img)
+    // Si hay imagen de referencia (opcional, pero funciona con este modelo)
     if (body.ip_adapter_image) {
-      console.log('🖼️ Con imagen de referencia (img2img)')
+      console.log('🖼️ Con imagen de referencia')
       input.image = body.ip_adapter_image
-      // Para img2img, necesitamos estos parámetros extra
-      input.strength = 0.8  // Qué tanto se parece a la original (0-1)
-      input.num_inference_steps = 40  // Más pasos para img2img
     }
 
     console.log('📤 Enviando a Replicate...')
@@ -53,19 +47,9 @@ export async function POST(req: Request) {
 
     if (!response.ok) {
       console.error('❌ Error Replicate:', prediction)
-      
-      let mensajeError = 'Error en Replicate'
-      if (prediction.detail?.includes('balance')) {
-        mensajeError = '💳 Sin créditos suficientes'
-      } else if (prediction.detail?.includes('not found')) {
-        mensajeError = '🔍 Modelo no encontrado'
-      } else {
-        mensajeError = prediction.detail || prediction.error || 'Error desconocido'
-      }
-      
       return NextResponse.json({ 
-        error: mensajeError,
-        detalle: prediction.detail || prediction.error
+        error: 'Error en Replicate', 
+        detalle: prediction.detail || prediction.error 
       }, { status: response.status })
     }
 
@@ -106,4 +90,4 @@ export async function POST(req: Request) {
       detalle: (error as Error).message 
     }, { status: 500 })
   }
-      }
+}
