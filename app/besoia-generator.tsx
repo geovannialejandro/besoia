@@ -21,6 +21,7 @@ export function BesoiaGenerator() {
   const [resultado, setResultado] = useState<{ tipo: 'imagen'; url: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // ✅ Subir imagen a Cloudinary correctamente
   async function subirImagen(file: File) {
     const formData = new FormData()
     formData.append('file', file)
