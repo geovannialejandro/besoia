@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
 
-// Configurar Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -21,7 +20,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Sube una imagen de referencia' }, { status: 400 })
     }
 
-    // 1. Subir la imagen a Cloudinary
+    // Subir a Cloudinary
     const uploadResult = await cloudinary.uploader.upload(image, {
       folder: 'besoia-references',
       resource_type: 'image',
@@ -29,7 +28,7 @@ export async function POST(req: Request) {
 
     const imageUrl = uploadResult.secure_url
 
-    // 2. Llamar a Replicate (InstantID)
+    // Llamar a Replicate - modelo más estable
     const createRes = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -38,11 +37,11 @@ export async function POST(req: Request) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        version: 'grandlineai/instant-id-photorealistic:03914a0c3326bf44383d0cd84b06822618af879229ce5d1d53bef38d93b68279',
+        version: 'zsxkib/instant-id:2e4785a4d80dadf580077b2244c8d7c05d8e3faac04a04c02d8e099dd2876789',
         input: {
           image: imageUrl,
           prompt: prompt,
-          negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy, extra limbs, watermark, text, cartoon, anime, drawing, plastic skin, oversaturated',
+          negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy, extra limbs, watermark, text, cartoon, anime, drawing, plastic skin',
           width: 832,
           height: 1216,
           num_inference_steps: 30,
@@ -60,7 +59,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 400 })
     }
 
-    // 3. Polling (3 minutos)
+    // Polling 3 minutos
     for (let i = 0; i < 180; i++) {
       if (result.status === 'succeeded') break
       if (result.status === 'failed' || result.status === 'canceled') {
