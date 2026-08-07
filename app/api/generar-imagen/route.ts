@@ -3,43 +3,31 @@ import { NextResponse } from 'next/server'
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    console.log('📥 Prompt recibido:', body.prompt?.substring(0, 50) + '...')
+    console.log('📥 Prompt:', body.prompt?.substring(0, 50) + '...')
 
-    // Validaciones básicas
     if (!body.prompt) {
       return NextResponse.json({ error: 'El prompt es obligatorio' }, { status: 400 })
     }
 
-    // 🔥 MODELO ESPECIALIZADO EN IDENTIDAD (CON IP-ADAPTER)
-    // Este modelo SÍ mantiene la cara de la imagen de referencia
-    const MODELO = 'tencentarc/photomaker:caa9c5c4cd49d6c83f8b51d10c82f0c359f09df7a4da32abdb630efef55166e4'
+    // 🔥 MODELO CORRECTO
+    const MODELO = 'zsxkib/instant-id-ipadapter-plus-face'
     
-    console.log('🚀 Usando modelo con IP-Adapter:', MODELO)
-
-    // Construir el input para Replicate
     const input: any = {
       prompt: body.prompt,
       negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime, CGI, pintura',
-      num_inference_steps: 35,
-      guidance_scale: 5.0,
-      width: 1024,
-      height: 1024,
-      // 🔥 PARÁMETRO CLAVE: Activar IP-Adapter
-      style: 'Photographic',  // Estilo realista
-      input_image: body.ip_adapter_image || null  // La imagen de referencia
+      num_inference_steps: 30,
+      guidance_scale: 5,
+      disable_safety_checker: true  // 🔥 Desactiva el filtro de seguridad
     }
 
-    // Si NO hay imagen de referencia, usamos el modo normal
-    if (!body.ip_adapter_image) {
-      delete input.input_image
-      delete input.style
-    } else {
-      console.log('🖼️ Usando imagen de referencia para mantener identidad')
+    // Si hay imagen de referencia
+    if (body.ip_adapter_image) {
+      console.log('🖼️ Con imagen de referencia')
+      input.image = body.ip_adapter_image  // El modelo espera 'image'
     }
 
-    console.log('📤 Enviando a Replicate...')
+    console.log('🚀 Enviando a Replicate...')
 
-    // Crear la predicción
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -53,17 +41,16 @@ export async function POST(req: Request) {
     })
 
     const prediction = await response.json()
-    console.log('📥 Respuesta de Replicate:', JSON.stringify(prediction, null, 2))
 
     if (!response.ok) {
-      console.error('❌ Error de Replicate:', prediction)
+      console.error('❌ Error Replicate:', prediction)
       return NextResponse.json({ 
-        error: 'Error al crear la predicción', 
-        detalle: prediction.error || 'Replicate rechazó la solicitud'
+        error: 'Error en Replicate', 
+        detalle: prediction.detail || prediction.error 
       }, { status: response.status })
     }
 
-    // Esperar a que termine
+    // Esperar resultado
     let result = prediction
     let attempts = 0
     while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 40) {
@@ -73,25 +60,23 @@ export async function POST(req: Request) {
       })
       result = await check.json()
       attempts++
-      console.log(`⏳ Intentos: ${attempts}, Estado: ${result.status}`)
+      console.log(`⏳ Intento ${attempts}: ${result.status}`)
     }
 
     if (result.status === 'failed') {
-      console.error('❌ Generación fallida:', result.error)
       return NextResponse.json({ 
-        error: 'La generación falló', 
+        error: 'Generación fallida', 
         detalle: result.error 
       }, { status: 500 })
     }
 
-    // Obtener la URL de la imagen
     const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output
     
     if (!imageUrl) {
       return NextResponse.json({ error: 'No se recibió imagen' }, { status: 500 })
     }
 
-    console.log('✅ Imagen generada con identidad preservada:', imageUrl)
+    console.log('✅ Imagen generada:', imageUrl)
     return NextResponse.json({ imagen: imageUrl })
 
   } catch (error) {
