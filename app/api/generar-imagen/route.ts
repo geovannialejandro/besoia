@@ -10,29 +10,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El prompt es obligatorio' }, { status: 400 })
     }
 
-    // 🔥 USAR ESTE MODELO - Está probado y funciona
-    const MODELO = 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b'
+    // 🔥 MODELO ESPECIALIZADO EN IDENTIDAD (CON IP-ADAPTER)
+    // Este modelo SÍ mantiene la cara de la imagen de referencia
+    const MODELO = 'tencentarc/photomaker:caa9c5c4cd49d6c83f8b51d10c82f0c359f09df7a4da32abdb630efef55166e4'
     
-    console.log('🚀 Usando modelo:', MODELO)
+    console.log('🚀 Usando modelo con IP-Adapter:', MODELO)
 
     // Construir el input para Replicate
     const input: any = {
       prompt: body.prompt,
-      negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime',
+      negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime, CGI, pintura',
+      num_inference_steps: 35,
+      guidance_scale: 5.0,
       width: 1024,
       height: 1024,
-      num_inference_steps: 30,
-      guidance_scale: 7.5,
-      // 🔥 CLAVE: Desactivar el filtro de seguridad
-      disable_safety_checker: true
+      // 🔥 PARÁMETRO CLAVE: Activar IP-Adapter
+      style: 'Photographic',  // Estilo realista
+      input_image: body.ip_adapter_image || null  // La imagen de referencia
     }
 
-    // Si hay imagen de referencia, añadirla (solo si el modelo la soporta)
-    if (body.ip_adapter_image) {
-      console.log('🖼️ Con imagen de referencia:', body.ip_adapter_image.substring(0, 50) + '...')
-      // Para SDXL base, la imagen de referencia se usa como "image" 
-      // pero NO todos los modelos la soportan, por eso lo ponemos condicional
-      input.image = body.ip_adapter_image
+    // Si NO hay imagen de referencia, usamos el modo normal
+    if (!body.ip_adapter_image) {
+      delete input.input_image
+      delete input.style
+    } else {
+      console.log('🖼️ Usando imagen de referencia para mantener identidad')
     }
 
     console.log('📤 Enviando a Replicate...')
@@ -64,7 +66,7 @@ export async function POST(req: Request) {
     // Esperar a que termine
     let result = prediction
     let attempts = 0
-    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 30) {
+    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 40) {
       await new Promise(resolve => setTimeout(resolve, 2000))
       const check = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
         headers: { 'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}` }
@@ -89,7 +91,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No se recibió imagen' }, { status: 500 })
     }
 
-    console.log('✅ Imagen generada:', imageUrl)
+    console.log('✅ Imagen generada con identidad preservada:', imageUrl)
     return NextResponse.json({ imagen: imageUrl })
 
   } catch (error) {
@@ -99,4 +101,4 @@ export async function POST(req: Request) {
       detalle: (error as Error).message 
     }, { status: 500 })
   }
-                                                                            }
+}
