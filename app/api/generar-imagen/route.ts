@@ -2,30 +2,29 @@ import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
   try {
-    // 🔍 Primero leemos lo que llega tal cual
+    // Leemos y validamos lo que llega
     const cuerpoCrudo = await req.text()
-    console.log('Cuerpo recibido:', cuerpoCrudo)
+    console.log('Datos recibidos:', cuerpoCrudo)
 
     let input
     try {
       input = JSON.parse(cuerpoCrudo)
     } catch {
       return NextResponse.json(
-        { error: 'Formato incorrecto, no es un JSON válido' },
+        { error: 'Formato incorrecto en la solicitud' },
         { status: 400 }
       )
     }
 
-    // Validación
+    // Validamos que si viene imagen sea una URL
     if (input.ip_adapter_image && typeof input.ip_adapter_image !== 'string') {
       return NextResponse.json(
-        { error: 'La imagen debe ser una dirección web' },
+        { error: 'La referencia debe ser una dirección de imagen' },
         { status: 400 }
       )
     }
 
-    console.log('Datos listos para Replicate:', input)
-
+    // Llamamos a Replicate
     const crear = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -45,7 +44,7 @@ export async function POST(req: Request) {
     })
 
     const textoRespuesta = await crear.text()
-    console.log('Respuesta Replicate:', textoRespuesta)
+    console.log('Respuesta de Replicate:', textoRespuesta)
 
     let prediccion
     try {
@@ -56,6 +55,7 @@ export async function POST(req: Request) {
 
     if (!crear.ok) throw new Error(prediccion.error || `Error ${crear.status}`)
 
+    // Esperamos a que termine
     let estado = prediccion
     let intentos = 0
 
@@ -90,6 +90,4 @@ export async function POST(req: Request) {
       error: (err as Error).message || 'Algo salió mal'
     }, { status: 500 })
   }
-}
-
-
+      }
