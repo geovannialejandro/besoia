@@ -2,16 +2,27 @@
 
 import { useState } from 'react'
 import { Loader2, Download, Sparkles, Upload } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+
+// Botón simple sin dependencias
+const Button = ({ children, onClick, disabled, className }: any) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className={`px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 ${className}`}
+  >
+    {children}
+  </button>
+)
 
 export function BesoiaGenerator() {
   const [prompt, setPrompt] = useState('')
   const [archivoSeleccionado, setArchivoSeleccionado] = useState<File | null>(null)
+  const [vistaPrevia, setVistaPrevia] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
   const [resultado, setResultado] = useState<{ tipo: 'imagen'; url: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Función para subir imagen a Cloudinary
+  // 🚀 Función para subir a Cloudinary
   async function subirImagen(file: File) {
     const formData = new FormData()
     formData.append('file', file)
@@ -28,7 +39,14 @@ export function BesoiaGenerator() {
     return datos.secure_url
   }
 
-  // Función principal de generación
+  // Manejar selección de archivo
+  function alSeleccionarArchivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const archivo = e.target.files?.[0] || null
+    setArchivoSeleccionado(archivo)
+    setVistaPrevia(archivo ? URL.createObjectURL(archivo) : null)
+  }
+
+  // Generación principal
   async function handleGenerate() {
     if (!prompt.trim()) return
 
@@ -39,17 +57,18 @@ export function BesoiaGenerator() {
     try {
       let urlImagen = null
 
+      // Subimos primero si hay foto
       if (archivoSeleccionado) {
         urlImagen = await subirImagen(archivoSeleccionado)
       }
 
-      // ✅ RUTA EXACTA A TU CARPETA
+      // Solo mandamos la URL, NUNCA el archivo directo
       const respuesta = await fetch('/api/generar-imagen', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: prompt,
-          ...(urlImagen && { ip_adapter_image: urlImagen })
+          ip_adapter_image: urlImagen
         })
       })
 
@@ -85,12 +104,16 @@ export function BesoiaGenerator() {
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => setArchivoSeleccionado(e.target.files?.[0] || null)}
+            onChange={alSeleccionarArchivo}
             className="text-sm"
           />
         </div>
-        {archivoSeleccionado && (
-          <p className="text-sm text-gray-600">Archivo: {archivoSeleccionado.name}</p>
+        
+        {vistaPrevia && (
+          <div className="mt-2">
+            <p className="text-sm text-gray-600 mb-1">Vista previa:</p>
+            <img src={vistaPrevia} alt="Vista previa" className="max-h-40 rounded-lg border" />
+          </div>
         )}
       </div>
 
