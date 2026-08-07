@@ -12,10 +12,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Formato incorrecto' }, { status: 400 })
     }
 
-    if (input.ip_adapter_image) {
-      if (typeof input.ip_adapter_image !== 'string' || !input.ip_adapter_image.startsWith('http')) {
-        return NextResponse.json({ error: 'La imagen no se subió bien', status: 400 })
-      }
+    if (!input.prompt) {
+      return NextResponse.json({ error: 'Escribe una descripción' }, { status: 400 })
     }
 
     const crear = await fetch('https://api.replicate.com/v1/predictions', {
@@ -28,12 +26,10 @@ export async function POST(req: Request) {
         version: 'lucataco/cyberrealistic-xl-v3:95a012c7732289547979b486c1c27d2d0c28f3a05f3f3a8d7f9c0b5a7d9e8f0a',
         input: {
           prompt: input.prompt,
-          negative_prompt: 'cara distinta, rasgos cambiados, feo, deformado, manos mal hechas, borroso, baja calidad, dibujo, caricatura',
+          negative_prompt: 'feo, deformado, manos mal hechas, borroso, baja calidad, dibujo, caricatura, texto, marca de agua',
           num_inference_steps: 35,
           guidance_scale: 7,
-          disable_safety_checker: true,
-          ip_adapter_image: input.ip_adapter_image,
-          ip_adapter_scale: 0.85
+          disable_safety_checker: true
         }
       })
     })
