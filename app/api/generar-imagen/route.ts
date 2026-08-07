@@ -1,96 +1,79 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    console.log('📥 Prompt recibido:', body.prompt?.substring(0, 50) + '...');
+    const { prompt, image } = await req.json()
 
-    if (!body.prompt) {
-      return NextResponse.json({ error: 'El prompt es obligatorio' }, { status: 400 });
+    if (!prompt) {
+      return NextResponse.json({ error: 'Escribe tu descripción' }, { status: 400 })
     }
 
-    // 🔥 EL MODELO JUGGERNAUT XL LIGHTNING CON EL HASH CORRECTO
-    const MODELO = 'sdxl-based/juggernaut-xl-lightning:c9a24c321ceb0b7843b872dcae82109dddadd1f82e94b115ee39289e0e182e40';
-    
-    console.log('🚀 Usando modelo:', MODELO);
-
-    // 🔥 CONSTRUCCIÓN DE PARÁMETROS CON EL disable_safety_checker
-    const input: any = {
-      prompt: body.prompt,
-      negative_prompt: 'feo, deformado, borroso, baja calidad, dibujo, caricatura, anime, CGI, pintura',
-      num_inference_steps: 5,      // ⚡ Es un modelo Lightning, solo necesita 5-7 pasos
-      guidance_scale: 2,           // 📉 CFG bajo para la versión Lightning
-      width: 1024,
-      height: 1024,
-      disable_safety_checker: true // 🔥 EL PARÁMETRO CLAVE PARA DESACTIVAR EL FILTRO
-    };
-
-    // Si hay imagen de referencia, se añade al input
-    if (body.ip_adapter_image) {
-      console.log('🖼️ Con imagen de referencia');
-      input.image = body.ip_adapter_image;
+    if (!image) {
+      return NextResponse.json({ error: 'Sube una imagen de referencia' }, { status: 400 })
     }
 
-    console.log('📤 Enviando a Replicate...');
-
-    // 🔥 LLAMADA DIRECTA A LA API DE REPLICATE
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
+    const createRes = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        version: MODELO,
-        input: input
+        version: 'grandlineai/instant-id-photorealistic:03914a0c3326bf44383d0cd84b06822618af879229ce5d1d53bef38d93b68279',
+        input: {
+          image: image,
+          prompt: prompt,
+          negative_prompt: 'blurry, low quality, deformed, ugly, bad anatomy, extra limbs, watermark, text, cartoon, anime, drawing, plastic skin, oversaturated',
+          width: 832,
+          height: 1216,
+          num_inference_steps: 30,
+          guidance_scale: 5,
+          ip_adapter_scale: 0.8,
+          controlnet_conditioning_scale: 0.8,
+          disable_safety_checker: true
+        },
+      }),
+    })
+
+    let result = await createRes.json()
+
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 400 })
+    }
+
+    // Polling
+    for (let i = 0; i < 90; i++) {
+      if (result.status === 'succeeded') break
+      if (result.status === 'failed' || result.status === 'canceled') {
+        return NextResponse.json({ error: result.error || 'La generación falló' }, { status: 500 })
+      }
+
+      await new Promise(r => setTimeout(r, 1000))
+
+      const pollRes = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
+        headers: {
+          'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}`,
+          'Accept': 'application/json'
+        }
       })
-    });
-
-    const prediction = await response.json();
-
-    if (!response.ok) {
-      console.error('❌ Error de Replicate:', prediction);
-      return NextResponse.json({
-        error: 'Error en Replicate',
-        detalle: prediction.detail || prediction.error
-      }, { status: response.status });
+      result = await pollRes.json()
     }
 
-    // ⏳ ESPERAR A QUE LA GENERACIÓN TERMINE (POLLING)
-    let result = prediction;
-    let attempts = 0;
-    while (result.status !== 'succeeded' && result.status !== 'failed' && attempts < 40) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const check = await fetch(`https://api.replicate.com/v1/predictions/${result.id}`, {
-        headers: { 'Authorization': `Token ${process.env.REPLICATE_API_TOKEN}` }
-      });
-      result = await check.json();
-      attempts++;
-      console.log(`⏳ Intento ${attempts}: ${result.status}`);
+    if (result.status !== 'succeeded') {
+      return NextResponse.json({ error: 'Tiempo de espera agotado' }, { status: 504 })
     }
 
-    if (result.status === 'failed') {
-      console.error('❌ Generación fallida:', result.error);
-      return NextResponse.json({
-        error: 'Generación fallida',
-        detalle: result.error
-      }, { status: 500 });
-    }
-
-    const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+    const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output
 
     if (!imageUrl) {
-      return NextResponse.json({ error: 'No se recibió imagen' }, { status: 500 });
+      return NextResponse.json({ error: 'No se obtuvo la imagen' }, { status: 500 })
     }
 
-    console.log('✅ Imagen generada con éxito:', imageUrl);
-    return NextResponse.json({ imagen: imageUrl });
+    return NextResponse.json({ image: imageUrl })
 
-  } catch (error) {
-    console.error('💥 Error inesperado:', error);
-    return NextResponse.json({
-      error: 'Error interno del servidor',
-      detalle: (error as Error).message
-    }, { status: 500 });
+  } catch (error: any) {
+    console.error(error)
+    return NextResponse.json({ error: error.message || 'Error generando imagen' }, { status: 500 })
   }
 }
