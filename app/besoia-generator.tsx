@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 
 export default function BesoiaGenerator() {
-  const [modo, setModo] = useState('generar') // 'generar', 'ropa', 'animar', 'video'
+  const [modo, setModo] = useState('generar')
   const [prompt, setPrompt] = useState('')
   const [cargando, setCargando] = useState(false)
   const [mensajeProgreso, setMensajeProgreso] = useState('')
@@ -17,7 +17,6 @@ export default function BesoiaGenerator() {
     setCargando(true)
     setImagenResultado(null)
 
-    // Secuencia de mensajes psicológicos de espera (puro choro para entretener)
     setMensajeProgreso("⏳ Alta demanda: Conectando con los servidores de IA...")
     
     setTimeout(() => {
@@ -25,7 +24,7 @@ export default function BesoiaGenerator() {
     }, 4000)
 
     setTimeout(() => {
-      setMensajeProgreso("✨ Procesando fotorrealismo sin censura y afinando detalles...")
+      setMensajeProgreso("✨ Procesando fotorrealismo y afinando detalles...")
     }, 9000)
 
     setTimeout(() => {
@@ -33,7 +32,7 @@ export default function BesoiaGenerator() {
     }, 16000)
 
     try {
-      const res = await fetch('/api/generar', {
+      const res = await fetch('/api/generar-imagen', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, modo })
@@ -58,13 +57,11 @@ export default function BesoiaGenerator() {
   return (
     <div className="max-w-md mx-auto p-4 bg-gray-900 text-white rounded-2xl border border-amber-600/50 shadow-2xl space-y-6">
       
-      {/* Título */}
       <div className="text-center space-y-1">
         <h2 className="text-xl font-bold text-amber-400">✨ Elige lo que quieres hacer</h2>
         <p className="text-xs text-gray-400">Tu imaginación, BESOIA lo crea.</p>
       </div>
 
-      {/* Botones de selección de modo */}
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => setModo('generar')}
@@ -108,7 +105,6 @@ export default function BesoiaGenerator() {
         </button>
       </div>
 
-      {/* Cuadro de descripción */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-amber-300 block">
           📝 Escribe tu descripción:
@@ -122,7 +118,6 @@ export default function BesoiaGenerator() {
         />
       </div>
 
-      {/* Botón de acción */}
       <button
         onClick={handleCrear}
         disabled={cargando}
@@ -145,7 +140,6 @@ export default function BesoiaGenerator() {
         )}
       </button>
 
-      {/* Resultado de la imagen generada */}
       {imagenResultado && (
         <div className="mt-4 space-y-2 text-center">
           <p className="text-green-400 text-xs font-medium">✅ ¡Imagen generada con éxito!</p>
@@ -153,7 +147,6 @@ export default function BesoiaGenerator() {
         </div>
       )}
 
-      {/* Nota al pie */}
       <p className="text-[10px] text-gray-500 text-center leading-relaxed">
         Todo contenido se procesa en total privacidad y se elimina automáticamente. Tú eres responsable del contenido que generes.
       </p>
