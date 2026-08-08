@@ -1,93 +1,163 @@
 'use client'
+import React, { useState } from 'react'
 
-import { useState } from 'react'
-import { Loader2, Download, Sparkles } from 'lucide-react'
-
-const Button = ({ children, onClick, disabled, className }: any) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    className={`px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 ${className}`}
-  >
-    {children}
-  </button>
-)
-
-export function BesoiaGenerator() {
+export default function BesoiaGenerator() {
+  const [modo, setModo] = useState('generar') // 'generar', 'ropa', 'animar', 'video'
   const [prompt, setPrompt] = useState('')
   const [cargando, setCargando] = useState(false)
-  const [resultado, setResultado] = useState<{ tipo: 'imagen'; url: string } | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [mensajeProgreso, setMensajeProgreso] = useState('')
+  const [imagenResultado, setImagenResultado] = useState(null)
 
-  async function handleGenerate() {
+  const handleCrear = async () => {
     if (!prompt.trim()) {
-      setError('Escribe una descripción')
+      alert("Por favor escribe una descripción para generar.")
       return
     }
+
     setCargando(true)
-    setError(null)
-    setResultado(null)
+    setImagenResultado(null)
+
+    // Secuencia de mensajes psicológicos de espera (puro choro para entretener)
+    setMensajeProgreso("⏳ Alta demanda: Conectando con los servidores de IA...")
+    
+    setTimeout(() => {
+      setMensajeProgreso("🔥 Muchos usuarios generando ahora mismo, tu turno está en proceso...")
+    }, 4000)
+
+    setTimeout(() => {
+      setMensajeProgreso("✨ Procesando fotorrealismo sin censura y afinando detalles...")
+    }, 9000)
+
+    setTimeout(() => {
+      setMensajeProgreso("🚀 Ya casi terminamos, preparando tu imagen final...")
+    }, 16000)
 
     try {
-      const respuesta = await fetch('/api/generar-imagen', {
+      const res = await fetch('/api/generar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt })
+        body: JSON.stringify({ prompt, modo })
       })
 
-      const datos = await respuesta.json()
-      if (!respuesta.ok) throw new Error(datos.error || 'No se pudo generar')
-      setResultado({ tipo: 'imagen', url: datos.imagen })
+      const data = await res.json()
 
-    } catch (err: any) {
-      setError(err.message || 'Algo salió mal')
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al generar la imagen')
+      }
+
+      setImagenResultado(data.url)
+    } catch (error) {
+      console.error(error)
+      alert("Hubo un error al generar. Intenta de nuevo.")
     } finally {
       setCargando(false)
+      setMensajeProgreso("")
     }
   }
 
   return (
-    <div className="space-y-4 w-full max-w-xl mx-auto p-4">
+    <div className="max-w-md mx-auto p-4 bg-gray-900 text-white rounded-2xl border border-amber-600/50 shadow-2xl space-y-6">
+      
+      {/* Título */}
+      <div className="text-center space-y-1">
+        <h2 className="text-xl font-bold text-amber-400">✨ Elige lo que quieres hacer</h2>
+        <p className="text-xs text-gray-400">Tu imaginación, BESOIA lo crea.</p>
+      </div>
+
+      {/* Botones de selección de modo */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => setModo('generar')}
+          className={`p-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
+            modo === 'generar' 
+              ? 'bg-amber-500 text-gray-950 font-bold shadow-lg shadow-amber-500/20' 
+              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+          }`}
+        >
+          🖼️ Generar Imagen
+        </button>
+        <button
+          onClick={() => setModo('ropa')}
+          className={`p-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
+            modo === 'ropa' 
+              ? 'bg-amber-500 text-gray-950 font-bold shadow-lg shadow-amber-500/20' 
+              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+          }`}
+        >
+          👕 Cambiar Ropa
+        </button>
+        <button
+          onClick={() => setModo('animar')}
+          className={`p-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
+            modo === 'animar' 
+              ? 'bg-amber-500 text-gray-950 font-bold shadow-lg shadow-amber-500/20' 
+              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+          }`}
+        >
+          ✨ Animar Foto
+        </button>
+        <button
+          onClick={() => setModo('video')}
+          className={`p-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
+            modo === 'video' 
+              ? 'bg-amber-500 text-gray-950 font-bold shadow-lg shadow-amber-500/20' 
+              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+          }`}
+        >
+          🎬 Video Corto
+        </button>
+      </div>
+
+      {/* Cuadro de descripción */}
       <div className="space-y-2">
-        <label className="font-medium">Tu descripción:</label>
+        <label className="text-sm font-medium text-amber-300 block">
+          📝 Escribe tu descripción:
+        </label>
         <textarea
+          rows={3}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Escribe cómo quieres que se vea la imagen..."
-          className="w-full p-3 rounded-lg border resize-none h-24"
+          placeholder="Ej: foto realistas en la playa, ultra detallada..."
+          className="w-full p-3 bg-gray-950 border border-gray-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500 transition-colors resize-none"
         />
       </div>
 
-      <Button
-        onClick={handleGenerate}
-        disabled={cargando || !prompt.trim()}
-        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 text-lg"
+      {/* Botón de acción */}
+      <button
+        onClick={handleCrear}
+        disabled={cargando}
+        className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
+          cargando 
+            ? 'bg-amber-600/40 text-amber-200 cursor-not-allowed border border-amber-500/30' 
+            : 'bg-amber-500 hover:bg-amber-400 text-gray-950 shadow-lg shadow-amber-500/20 cursor-pointer'
+        }`}
       >
-        {cargando ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
-        {cargando ? 'Generando...' : 'Crear Imagen'}
-      </Button>
+        {cargando ? (
+          <>
+            <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-xs font-medium">{mensajeProgreso}</span>
+          </>
+        ) : (
+          <>✨ 🚀 Crear Ahora</>
+        )}
+      </button>
 
-      {error && (
-        <div className="p-3 bg-red-50 border border-red-300 text-red-700 rounded-lg text-sm font-medium">
-          ❌ {error}
+      {/* Resultado de la imagen generada */}
+      {imagenResultado && (
+        <div className="mt-4 space-y-2 text-center">
+          <p className="text-green-400 text-xs font-medium">✅ ¡Imagen generada con éxito!</p>
+          <img src={imagenResultado} alt="Resultado IA" className="rounded-xl border border-amber-500/40 w-full object-cover shadow-md" />
         </div>
       )}
 
-      {resultado && (
-        <div className="space-y-3 mt-4">
-          <p className="font-semibold text-green-700">✅ ¡Listo!</p>
-          <img src={resultado.url} alt="Imagen generada" className="w-full rounded-lg shadow-lg" />
-          <a
-            href={resultado.url}
-            download
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-          >
-            <Download className="w-4 h-4" /> Descargar imagen
-          </a>
-        </div>
-      )}
+      {/* Nota al pie */}
+      <p className="text-[10px] text-gray-500 text-center leading-relaxed">
+        Todo contenido se procesa en total privacidad y se elimina automáticamente. Tú eres responsable del contenido que generes.
+      </p>
+
     </div>
   )
 }
