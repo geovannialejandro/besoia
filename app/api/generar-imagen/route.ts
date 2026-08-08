@@ -1,4 +1,4 @@
-}import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import Replicate from 'replicate'
 
 const replicate = new Replicate({
