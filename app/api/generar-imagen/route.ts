@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+}import { NextResponse } from 'next/server'
 import Replicate from 'replicate'
 
 const replicate = new Replicate({
@@ -13,7 +13,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Falta el prompt' }, { status: 400 })
     }
 
-    // Llamada con los parámetros mínimos indispensables
     const output = await replicate.run(
       "lucataco/realvisxl-v4.0:2572b94bfecbc656b026776a394c86b2450410cb666fc03e913a00531cc2855f",
       {
@@ -28,7 +27,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: imageUrl })
 
   } catch (error: any) {
-    console.error("Error completo de Replicate:", error)
+    console.error("Error en Replicate:", error)
     return NextResponse.json(
       { error: error.message || 'Error interno al procesar' },
       { status: 500 }
