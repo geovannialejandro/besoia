@@ -13,15 +13,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Falta el prompt' }, { status: 400 })
     }
 
-    // Usamos el modelo estable por nombre de usuario y modelo
+    // Llamada con los parámetros mínimos indispensables
     const output = await replicate.run(
-      "lucataco/realvisxl-v4.0",
+      "lucataco/realvisxl-v4.0:2572b94bfecbc656b026776a394c86b2450410cb666fc03e913a00531cc2855f",
       {
         input: {
-          prompt: `${prompt}, photorealistic, raw photo, highly detailed skin, 8k, masterpiece`,
-          negative_prompt: "cartoon, illustration, animation, painting, blurry",
-          num_outputs: 1,
-          aspect_ratio: "9:16"
+          prompt: prompt
         }
       }
     )
@@ -31,7 +28,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ url: imageUrl })
 
   } catch (error: any) {
-    console.error("Error detallado de Replicate:", error)
+    console.error("Error completo de Replicate:", error)
     return NextResponse.json(
       { error: error.message || 'Error interno al procesar' },
       { status: 500 }
